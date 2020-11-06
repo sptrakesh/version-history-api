@@ -54,16 +54,16 @@ Defaults()
     echo "MONGO_SERVICE_PORT not set.  Will default to $MONGO_SERVICE_PORT"
   fi
 
-  if [ -z "$VERSION_DATABASE" ]
+  if [ -z "$VERSION_HISTORY_DATABASE" ]
   then
-    VERSION_DATABASE="versionHistory"
-    echo "VERSION_DATABASE not set.  Will default to $VERSION_DATABASE"
+    VERSION_HISTORY_DATABASE="versionHistory"
+    echo "VERSION_HISTORY_DATABASE not set.  Will default to $VERSION_HISTORY_DATABASE"
   fi
 
-  if [ -z "$VERSION_COLLECTION" ]
+  if [ -z "$VERSION_HISTORY_COLLECTION" ]
   then
-    VERSION_COLLECTION="entities"
-    echo "VERSION_COLLECTION not set.  Will default to $VERSION_COLLECTION"
+    VERSION_HISTORY_COLLECTION="entities"
+    echo "VERSION_HISTORY_COLLECTION not set.  Will default to $VERSION_HISTORY_COLLECTION"
   fi
 
   if [ -z "$METRICS_DATABASE" ]
@@ -91,8 +91,8 @@ Service()
     --port $PORT --threads $THREADS \
     --mongo-service-host $MONGO_SERVICE_HOST \
     --mongo-service-port $MONGO_SERVICE_PORT \
-    --version-database $VERSION_DATABASE \
-    --version-collection $VERSION_COLLECTION \
+    --version-history-database $VERSION_HISTORY_DATABASE \
+    --version-history-collection $VERSION_HISTORY_COLLECTION \
     --metrics-database $METRICS_DATABASE \
     --metrics-collection $METRICS_COLLECTION
 }

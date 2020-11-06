@@ -23,8 +23,8 @@ int main( int argc, char const * const * argv )
   auto options = clara::Help(help) |
       Opt(conf.mongoServiceHost, "mongo-service")["-a"]["--mongo-service-host"]("Mongo service host to connect to for metrics.") |
       Opt(conf.mongoServicePort, "2000")["-b"]["--mongo-service-port"]("Mongo service port to connect to for metrics (default 2000)") |
-      Opt(conf.versionDatabase, "versionHistory")["-c"]["--version-database"]("Mongo database where metrics are stored (default versionHistory)") |
-      Opt(conf.versionCollection, "entities")["-d"]["--version-collection"]("Mongo collection where metrics are stored (default entities)") |
+      Opt(conf.versionDatabase, "versionHistory")["-c"]["--version-history-database"]("Mongo database where metrics are stored (default versionHistory)") |
+      Opt(conf.versionCollection, "entities")["-d"]["--version-history-collection"]("Mongo collection where metrics are stored (default entities)") |
       Opt(conf.metricsDatabase, "metrics")["-e"]["--metrics-database"]("Mongo database where metrics are stored (default metrics)") |
       Opt(conf.metricsCollection, "api")["-f"]["--metrics-collection"]("Mongo collection where metrics are stored (default api)") |
       Opt(conf.port, "6100")["-p"]["--port"]("Port on which to listen (default 6100)") |

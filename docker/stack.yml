@@ -1,0 +1,46 @@
+version: '3.7'
+
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: test
+      MONGO_INITDB_ROOT_PASSWORD: test
+    volumes:
+      - $DATA_DIR/mongo:/data/db
+
+  mongo-service:
+    image: mongo-service
+    stop_signal: SIGTERM
+    environment:
+      - "MONGO_URI=mongodb://test:test@mongo/admin?authSource=admin&compressors=snappy&w=1"
+      - VERSION_HISTORY_DATABASE=versionHistory
+      - VERSION_HISTORY_COLLECTION=entities
+      - METRICS_COLLECTION=metrics
+      - LOG_LEVEL=debug
+    volumes:
+      - $DATA_DIR/mongo-service:/opt/spt/logs
+
+  version-history-api:
+    image: version-history-api
+    stop_signal: SIGTERM
+    environment:
+      - MONGO_SERVICE_HOST=mongo-service
+      - VERSION_HISTORY_DATABASE=versionHistory
+      - VERSION_HISTORY_COLLECTION=entities
+      - METRICS_DATABASE=metrics
+      - METRICS_COLLECTION=versionHistoryApi
+      - LOG_LEVEL=debug
+    volumes:
+      - $DATA_DIR/mongo-service:/opt/spt/logs
+
+  envoy:
+    image: envoyproxy/envoy-alpine:v1.16.0
+    stop_signal: SIGTERM
+    ports:
+      - "2000:2000"
+      - "6100:6100"
+    volumes:
+      - $DATA_DIR/envoy.yml:/etc/envoy/envoy.yaml:ro
