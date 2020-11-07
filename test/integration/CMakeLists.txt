@@ -11,6 +11,6 @@ set( api_SRCS ${api_SRCS} )
 add_executable(apiTest ${api_SRCS} )
 
 target_link_libraries(apiTest
-  PRIVATE ${LIBMONGOCXX_STATIC_LIBRARIES} Qt5::Core Qt5::Network Qt5::Test Boost::boost Boost::iostreams ${OPENSSL_LIBRARIES} -lz
+  PRIVATE ${LIBMONGOCXX_STATIC_LIBRARIES} Qt5::Core Qt5::Network Qt5::Test Boost::boost ${OPENSSL_LIBRARIES} -lz
 )
 

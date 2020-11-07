@@ -10,7 +10,7 @@ namespace spt
 {
   class ListTest : public BaseTest
   {
-  Q_OBJECT
+    Q_OBJECT
 
   public:
     ListTest( QObject* parent = nullptr ) : BaseTest( parent ) {}
@@ -21,6 +21,7 @@ namespace spt
     void optionsRequest();
     void postRequest();
     void invalidRequest();
+    void nonexistentRequest();
     void putRequest();
     void deleteRequest();
 

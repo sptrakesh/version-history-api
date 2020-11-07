@@ -75,6 +75,14 @@ auto spt::db::impl::summary( Connection& connection,
     return { std::nullopt, 404 };
   }
 
+  if ( arr->empty() )
+  {
+    LOG_INFO << "No version history for " << database << ':' <<
+      collection << ':' << id.to_string() <<
+      ". " << bsoncxx::to_json( reqv );
+    return { std::nullopt, 404 };
+  }
+
   return { opt, 200 };
 }
 
@@ -115,7 +123,7 @@ auto spt::db::impl::document( Connection& connection, const bsoncxx::oid& id ) -
     return { std::nullopt, 417 };
   }
 
-  const auto doc = util::bsonValueIfExists<bsoncxx::array::view>( "result", view );
+  const auto doc = util::bsonValueIfExists<bsoncxx::document::view>( "result", view );
   if ( !doc )
   {
     LOG_WARN << "Query for version history document " << conf.versionDatabase << ':' <<
@@ -169,7 +177,7 @@ auto spt::db::impl::entity( Connection& connection, const bsoncxx::oid& id ) -> 
     return { std::nullopt, 417 };
   }
 
-  const auto doc = util::bsonValueIfExists<bsoncxx::array::view>( "result", view );
+  const auto doc = util::bsonValueIfExists<bsoncxx::document::view>( "result", view );
   if ( !doc )
   {
     LOG_WARN << "Query for version history document " << conf.versionDatabase << ':' <<
