@@ -59,27 +59,33 @@ auto spt::db::impl::summary( Connection& connection,
   const auto err = util::bsonValueIfExists<std::string>( "error", view );
   if ( err )
   {
-    LOG_WARN << "Error retrieving version history for " << database << ':' <<
+    std::ostringstream ss;
+    ss << "Error retrieving version history for " << database << ':' <<
       collection << ':' << id.to_string() << ". " << *err <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 417 };
   }
 
   const auto arr = util::bsonValueIfExists<bsoncxx::array::view>( "results", view );
   if ( !arr )
   {
-    LOG_WARN << "Query results for version history for " << database << ':' <<
+    std::ostringstream ss;
+    ss << "Query results for version history for " << database << ':' <<
       collection << ':' << id.to_string() <<
       " did not return results. " << bsoncxx::to_json( view ) <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 404 };
   }
 
   if ( arr->empty() )
   {
-    LOG_INFO << "No version history for " << database << ':' <<
+    std::ostringstream ss;
+    ss << "No version history for " << database << ':' <<
       collection << ':' << id.to_string() <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_INFO << ss.str();
     return { std::nullopt, 404 };
   }
 
@@ -117,19 +123,23 @@ auto spt::db::impl::document( Connection& connection, const bsoncxx::oid& id ) -
   const auto err = util::bsonValueIfExists<std::string>( "error", view );
   if ( err )
   {
-    LOG_WARN << "Error retrieving version history document " << conf.versionDatabase << ':' <<
+    std::ostringstream ss;
+    ss << "Error retrieving version history document " << conf.versionDatabase << ':' <<
       conf.versionCollection << ':' << id.to_string() << ". " << *err <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 417 };
   }
 
   const auto doc = util::bsonValueIfExists<bsoncxx::document::view>( "result", view );
   if ( !doc )
   {
-    LOG_WARN << "Query for version history document " << conf.versionDatabase << ':' <<
+    std::ostringstream ss;
+    ss << "Query for version history document " << conf.versionDatabase << ':' <<
       conf.versionCollection << ':' << id.to_string() <<
       " did not return result. " << bsoncxx::to_json( view ) <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 404 };
   }
 
@@ -171,19 +181,23 @@ auto spt::db::impl::entity( Connection& connection, const bsoncxx::oid& id ) -> 
   const auto err = util::bsonValueIfExists<std::string>( "error", view );
   if ( err )
   {
-    LOG_WARN << "Error retrieving version history document " << conf.versionDatabase << ':' <<
+    std::ostringstream ss;
+    ss << "Error retrieving version history document " << conf.versionDatabase << ':' <<
       conf.versionCollection << ':' << id.to_string() << ". " << *err <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 417 };
   }
 
   const auto doc = util::bsonValueIfExists<bsoncxx::document::view>( "result", view );
   if ( !doc )
   {
-    LOG_WARN << "Query for version history document " << conf.versionDatabase << ':' <<
+    std::ostringstream ss;
+    ss << "Query for version history document " << conf.versionDatabase << ':' <<
       conf.versionCollection << ':' << id.to_string() <<
       " did not return result. " << bsoncxx::to_json( view ) <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 404 };
   }
 
@@ -202,9 +216,11 @@ auto spt::db::impl::revert( Connection& connection, const bsoncxx::oid& historyI
   auto [vh, code] = entity( connection, historyId );
   if ( !vh )
   {
-    LOG_WARN << "Unable to revert " << database << ':' << collection <<
+    std::ostringstream ss;
+    ss << "Unable to revert " << database << ':' << collection <<
       ':' << entityId.to_string() << " as history document " <<
       historyId.to_string() << " not found.";
+    LOG_WARN << ss.str();
     return { std::nullopt, code };
   }
 
@@ -212,7 +228,12 @@ auto spt::db::impl::revert( Connection& connection, const bsoncxx::oid& historyI
     "action" << "update" <<
     "database" << database <<
     "collection" << collection <<
-    "document" << vh->view() <<
+    "document" <<
+      open_document <<
+        "filter" << open_document << "_id" << entityId << close_document <<
+        "replace" << vh->view() <<
+      close_document <<
+    "options" << open_document << "upsert" << true << close_document <<
     "application" << "version-history-api" <<
     "metadata" << open_document << "revertedFrom" << historyId << close_document <<
     finalize;
@@ -231,9 +252,11 @@ auto spt::db::impl::revert( Connection& connection, const bsoncxx::oid& historyI
   const auto err = util::bsonValueIfExists<std::string>( "error", view );
   if ( err )
   {
-    LOG_WARN << "Error reverting document " << database << ':' <<
+    std::ostringstream ss;
+    ss << "Error reverting document " << database << ':' <<
       collection << ':' << entityId.to_string() << ". " << *err <<
       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
     return { std::nullopt, 417 };
   }
 

@@ -57,7 +57,7 @@ int main( int argc, char const * const * argv )
   else if ( conf.logLevel == "info" ) nanolog::set_log_level( nanolog::LogLevel::INFO );
   else if ( conf.logLevel == "warn" ) nanolog::set_log_level( nanolog::LogLevel::WARN );
   else if ( conf.logLevel == "critical" ) nanolog::set_log_level( nanolog::LogLevel::CRIT );
-  nanolog::initialize( nanolog::NonGuaranteedLogger( logBuffer ), dir, "batch-api", console );
+  nanolog::initialize( nanolog::NonGuaranteedLogger( logBuffer ), dir, "version-history-api", console );
 
   return spt::start();
 }

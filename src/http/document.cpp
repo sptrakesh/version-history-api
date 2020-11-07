@@ -26,7 +26,7 @@ namespace spt::http::internal
       Args&&... args )
   {
     const auto st = std::chrono::steady_clock::now();
-    LOG_DEBUG << "Handling request for " << req.uri().path;
+    LOG_DEBUG << "Handling " << req.method() << " request for " << req.uri().path;
 
     auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
     if ( methods.find( req.method() ) == std::cend( methods ) ) return unsupported( res );
