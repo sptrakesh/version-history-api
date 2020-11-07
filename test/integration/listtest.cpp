@@ -12,6 +12,9 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include <bsoncxx/validate.hpp>
+#include <bsoncxx/types.hpp>
+
 using spt::ListTest;
 
 void ListTest::getRequest()
@@ -37,6 +40,25 @@ void ListTest::getRequest()
   QVERIFY2( results.isArray(), "Results not array for api endpoint" );
   const auto arr = results.toArray();
   QVERIFY2( arr.size() >= 3, "Not all versions returned" );
+}
+
+void ListTest::getBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const QString entityId = "5f3bc9e2502422053e08f9f1";
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto reply = get( endpoint, &req );
+
+  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error retrieving api response" );
+  const auto body = reply->readAll();
+
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "results" ) != option->end(), "Matching entities not returned" );
+
+  QVERIFY2( (*option)["results"].type() == bsoncxx::type::k_array, "Results not array" );
 }
 
 void ListTest::optionsRequest()

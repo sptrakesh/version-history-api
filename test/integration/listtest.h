@@ -17,6 +17,7 @@ namespace spt
 
   private slots:
     void getRequest();
+    void getBson();
     void optionsRequest();
     void postRequest();
     void invalidRequest();
