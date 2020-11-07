@@ -16,10 +16,10 @@ using spt::ListTest;
 
 void ListTest::getRequest()
 {
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
+  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = get( endpoint, &req );
 
@@ -41,36 +41,75 @@ void ListTest::getRequest()
 
 void ListTest::optionsRequest()
 {
-}
+  QNetworkRequest req;
+  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
 
-void ListTest::invalidToken()
-{
+  const QString entityId = "5f3bc9e2502422053e08f9f1";
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto reply = custom( endpoint, "OPTIONS", &req );
+  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error making OPTIONS request" );
 }
 
 void ListTest::postRequest()
 {
-}
+  QNetworkRequest req;
+  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
 
-void ListTest::hugeRequest()
-{
-}
+  const QString entityId = "5f3bc9e2502422053e08f9f1";
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto reply = post( endpoint, {}, &req );
 
-void ListTest::halfHugeRequest()
-{
-}
-
-void ListTest::doubleHugeRequest()
-{
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "POST allowed on api endpoint" );
+  const auto doc = QJsonDocument::fromJson( reply->readAll() );
+  const auto obj = doc.object();
+  QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
+  QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
 void ListTest::invalidRequest()
 {
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/json" );
+
+  const QString entityId = "5f3bc9e2502422053e0";
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto reply = get( endpoint, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "Invalid BSON objectId did not return error" );
+  const auto doc = QJsonDocument::fromJson( reply->readAll() );
+  const auto obj = doc.object();
+  QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
+  QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
 void ListTest::putRequest()
 {
+  QNetworkRequest req;
+  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+
+  const QString entityId = "5f3bc9e2502422053e08f9f1";
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto reply = put( endpoint, {}, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "PUT allowed on api endpoint" );
+  const auto doc = QJsonDocument::fromJson( reply->readAll() );
+  const auto obj = doc.object();
+  QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
+  QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
 void ListTest::deleteRequest()
 {
+  QNetworkRequest req;
+  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+
+  const QString entityId = "5f3bc9e2502422053e08f9f1";
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto reply = custom( endpoint, "DELETE", &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "DELETE allowed on api endpoint" );
+  const auto doc = QJsonDocument::fromJson( reply->readAll() );
+  const auto obj = doc.object();
+  QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
+  QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }

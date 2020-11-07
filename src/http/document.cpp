@@ -62,7 +62,7 @@ namespace spt::http::internal
       }
       else
       {
-        const auto js = bsoncxx::to_json( doc->view() );
+        const auto js = bsoncxx::to_json( doc->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
         const auto& [data, compressed] = http::compress( js );
 
         const auto et = std::chrono::steady_clock::now();

@@ -18,11 +18,7 @@ namespace spt
   private slots:
     void getRequest();
     void optionsRequest();
-    void invalidToken();
     void postRequest();
-    void hugeRequest();
-    void halfHugeRequest();
-    void doubleHugeRequest();
     void invalidRequest();
     void putRequest();
     void deleteRequest();

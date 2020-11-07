@@ -64,7 +64,7 @@ void spt::http::handleList( const nghttp2::asio_http2::server::request& req, con
     }
     else
     {
-      const auto js = bsoncxx::to_json( result.data->view() );
+      const auto js = bsoncxx::to_json( result.data->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
       const auto& [data, compressed] = http::compress( js );
 
       const auto et = std::chrono::steady_clock::now();
