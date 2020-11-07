@@ -19,8 +19,7 @@ namespace spt::http
   void unsupported( const nghttp2::asio_http2::server::response& res );
   void error( int code, std::string_view message, const nghttp2::asio_http2::server::response& res );
 
-  std::string authorise( const nghttp2::asio_http2::server::request& req,
-      const nghttp2::asio_http2::server::response& res );
+  std::string authorise( const nghttp2::asio_http2::server::request& req );
   std::string correlationId( const nghttp2::asio_http2::server::request& req );
 
   using Output = std::tuple<std::string,bool>;

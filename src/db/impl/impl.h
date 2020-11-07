@@ -8,7 +8,6 @@
 #include "model/metric.h"
 
 #include <bsoncxx/oid.hpp>
-#include <bsoncxx/array/value.hpp>
 #include <bsoncxx/document/value.hpp>
 
 #include <optional>
@@ -16,7 +15,7 @@
 
 namespace spt::db::impl
 {
-  using Summary = std::tuple<std::optional<bsoncxx::array::value>, int>;
+  using Summary = std::tuple<std::optional<bsoncxx::document::value>, int>;
   Summary summary( Connection& connection,
       std::string_view database, std::string_view collection, const bsoncxx::oid& id );
 

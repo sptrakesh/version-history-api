@@ -5,7 +5,7 @@
 #pragma once
 
 #include <optional>
-#include <bsoncxx/array/value.hpp>
+#include <bsoncxx/document/value.hpp>
 
 namespace spt::model
 {
@@ -18,7 +18,7 @@ namespace spt::model
     SummaryResponse( const SummaryResponse& ) = delete;
     SummaryResponse& operator=( const SummaryResponse& ) = delete;
 
-    std::optional<bsoncxx::array::value> data{ std::nullopt };
+    std::optional<bsoncxx::document::value> data{ std::nullopt };
     int64_t time{ 0 };
     int code{ 200 };
   };

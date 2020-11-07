@@ -13,13 +13,17 @@ std::string Configuration::str() const
 {
   std::ostringstream ss;
   ss << '{' <<
-    R"(", "logLevel": ")" << logLevel <<
+    R"("logLevel": ")" << logLevel <<
     R"(", "mongo": {)" <<
     R"("host": ")" << mongoServiceHost <<
     R"(", "port": )" << mongoServicePort <<
-    R"(, "database": ")" << metricsDatabase <<
+    R"(, "versionHistory": {)" <<
+    R"("database": ")" << versionDatabase <<
+    R"(", "collection": ")" << versionCollection <<
+    R"("}, "metrics": {)" <<
+    R"("database": ")" << metricsDatabase <<
     R"(", "collection": ")" << metricsCollection <<
-    R"("}, "port": )" << port <<
+    R"("}}, "port": )" << port <<
     ", \"threads\": " << threads <<
     '}';
   return ss.str();

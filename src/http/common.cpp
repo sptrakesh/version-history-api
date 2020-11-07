@@ -103,25 +103,9 @@ std::string spt::http::decompress( const std::string& body )
   return decomp.str();
 }
 
-std::string spt::http::authorise( const nghttp2::asio_http2::server::request& req,
-    const nghttp2::asio_http2::server::response& res )
+std::string spt::http::authorise( const nghttp2::asio_http2::server::request& req )
 {
-  auto iter = req.header().find( "Content-Type" );
-  if ( iter == std::cend( req.header() ) ) iter = req.header().find( "content-type" );
-
-  if ( iter == std::cend( req.header() ) )
-  {
-    error( 400, "No Content-Type", res );
-    return {};
-  }
-
-  if ( iter->second.value.find( "application/json" ) == std::string::npos )
-  {
-    error( 400, "Invalid Content-Type", res );
-    return {};
-  }
-
-  iter = req.header().find( "authorization" );
+  auto iter = req.header().find( "authorization" );
   if ( iter == std::cend( req.header() ) ) iter = req.header().find( "Authorization" );
   return iter == std::cend( req.header() ) ? std::string{} : iter->second.value;
 }

@@ -26,7 +26,7 @@ void spt::http::handleList( const nghttp2::asio_http2::server::request& req, con
 
   try
   {
-    auto bearer = authorise( req, res );
+    auto bearer = authorise( req );
     auto compress = shouldCompress( req );
     auto ip = ipaddress( req );
 
@@ -34,8 +34,12 @@ void spt::http::handleList( const nghttp2::asio_http2::server::request& req, con
     if ( format.empty() ) return error( 400, "Bad request", res );
 
     LOG_DEBUG << "Handling request for " << req.uri().path;
-    const auto parts = util::split( req.uri().path, 6 );
-    if ( parts.size() < 6 ) return error( 404, "Not found", res );
+    const auto parts = util::split( req.uri().path, 6, "/" );
+    if ( parts.size() < 6 )
+    {
+      LOG_INFO << "Path " << req.uri().path << " has only " << int(parts.size()) << " components";
+      return error( 404, "Not found", res );
+    }
 
     const auto oid = bsoncxx::oid{ parts[5] };
     const auto result = db::summary( parts[3], parts[4], oid );

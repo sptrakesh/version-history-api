@@ -34,7 +34,7 @@ namespace spt::http::internal
 
     try
     {
-      auto bearer = authorise( req, res );
+      auto bearer = authorise( req );
       auto compress = shouldCompress( req );
       auto ip = ipaddress( req );
 
@@ -93,7 +93,7 @@ namespace spt::http::internal
   {
     try
     {
-      const auto parts = util::split( req.uri().path, 4 );
+      const auto parts = util::split( req.uri().path, 4, "/" );
       if ( parts.size() < 4 ) return error( 404, "Not found", res );
 
       const auto oid = bsoncxx::oid{ parts[3] };
@@ -129,7 +129,7 @@ void spt::http::handleRevert( const nghttp2::asio_http2::server::request& req,
 {
   try
   {
-    const auto parts = util::split( req.uri().path, 7 );
+    const auto parts = util::split( req.uri().path, 7, "/" );
     if ( parts.size() < 7 ) return error( 404, "Not found", res );
 
     const auto vid = bsoncxx::oid{ parts[3] };

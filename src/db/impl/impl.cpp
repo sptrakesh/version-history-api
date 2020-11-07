@@ -75,7 +75,7 @@ auto spt::db::impl::summary( Connection& connection,
     return { std::nullopt, 404 };
   }
 
-  return { bsoncxx::array::value{ *arr }, 200 };
+  return { opt, 200 };
 }
 
 auto spt::db::impl::document( Connection& connection, const bsoncxx::oid& id ) -> Document
