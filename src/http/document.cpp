@@ -22,13 +22,13 @@ namespace spt::http::internal
 {
   template <typename Function, typename... Args>
   void handle( const nghttp2::asio_http2::server::request& req,
-      const nghttp2::asio_http2::server::response& res, const Function& fn,
-      Args&&... args )
+      const nghttp2::asio_http2::server::response& res,
+      const std::unordered_set<std::string>& methods,
+      const Function& fn, Args&&... args )
   {
     const auto st = std::chrono::steady_clock::now();
     LOG_DEBUG << "Handling " << req.method() << " request for " << req.uri().path;
 
-    auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
     if ( methods.find( req.method() ) == std::cend( methods ) ) return unsupported( res );
     if ( req.method() == "OPTIONS" ) return cors( res );
 
@@ -91,13 +91,15 @@ namespace spt::http::internal
   void handleDocument( const nghttp2::asio_http2::server::request& req,
       const nghttp2::asio_http2::server::response& res, const Function& fn )
   {
+    auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
+
     try
     {
       const auto parts = util::split( req.uri().path, 4, "/" );
       if ( parts.size() < 4 ) return error( 404, "Not found", res );
 
       const auto oid = bsoncxx::oid{ parts[3] };
-      handle( req, res, fn, oid );
+      handle( req, res, methods, fn, oid );
     }
     catch ( const bsoncxx::exception& b )
     {
@@ -127,6 +129,7 @@ void spt::http::handleEntity( const nghttp2::asio_http2::server::request& req,
 void spt::http::handleRevert( const nghttp2::asio_http2::server::request& req,
     const nghttp2::asio_http2::server::response& res )
 {
+  auto static const methods = std::unordered_set<std::string>{ "PUT", "OPTIONS" };
   try
   {
     const auto parts = util::split( req.uri().path, 7, "/" );
@@ -134,7 +137,7 @@ void spt::http::handleRevert( const nghttp2::asio_http2::server::request& req,
 
     const auto vid = bsoncxx::oid{ parts[3] };
     const auto eid = bsoncxx::oid{ parts[6] };
-    internal::handle( req, res, &db::revert, vid, parts[4], parts[5], eid );
+    internal::handle( req, res, methods, &db::revert, vid, parts[4], parts[5], eid );
   }
   catch ( const bsoncxx::exception& b )
   {

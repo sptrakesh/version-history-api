@@ -42,35 +42,16 @@ void RevertTest::initTestCase()
 void RevertTest::getRequest()
 {
   QNetworkRequest req;
-  req.setRawHeader( "accept", "application/json" );
+  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
 
   const auto endpoint = QString( "%1%2/itest/test/%3" ).arg( url ).arg( historyId ).arg( entityId );
   const auto reply = get( endpoint, &req );
 
-  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error retrieving api response" );
-  const auto body = reply->readAll();
-  const auto doc = QJsonDocument::fromJson( body );
-  QVERIFY2( doc.isObject(), "Empty json response for api endpoint" );
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "PUT allowed on api endpoint" );
+  const auto doc = QJsonDocument::fromJson( reply->readAll() );
   const auto obj = doc.object();
-  qDebug() << obj;
-
-  QVERIFY2( !obj.isEmpty(), "Empty json response for api endpoint" );
-}
-
-void RevertTest::getBson()
-{
-  QNetworkRequest req;
-  req.setRawHeader( "accept", "application/bson" );
-
-  const auto endpoint = QString( "%1%2/itest/test/%3" ).arg( url ).arg( historyId ).arg( entityId );
-  const auto reply = get( endpoint, &req );
-
-  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error retrieving api response" );
-  const auto body = reply->readAll();
-
-  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
-  QVERIFY2( option.has_value(), "Response not BSON" );
-  QVERIFY2( option->find( "err" ) == option->end(), "Retrieving history returned error" );
+  QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
+  QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
 void RevertTest::optionsRequest()
@@ -131,16 +112,35 @@ void RevertTest::nonexistentRequest()
 void RevertTest::putRequest()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2/itest/test/%3" ).arg( url ).arg( historyId ).arg( entityId );
   const auto reply = put( endpoint, {}, &req );
 
-  QVERIFY2( reply->error() != QNetworkReply::NoError, "PUT allowed on api endpoint" );
-  const auto doc = QJsonDocument::fromJson( reply->readAll() );
+  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error retrieving api response" );
+  const auto body = reply->readAll();
+  const auto doc = QJsonDocument::fromJson( body );
+  QVERIFY2( doc.isObject(), "Empty json response for api endpoint" );
   const auto obj = doc.object();
-  QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
-  QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
+  qDebug() << obj;
+
+  QVERIFY2( !obj.isEmpty(), "Empty json response for api endpoint" );
+}
+
+void RevertTest::putBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2/itest/test/%3" ).arg( url ).arg( historyId ).arg( entityId );
+  const auto reply = put( endpoint, {}, &req );
+
+  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error retrieving api response" );
+  const auto body = reply->readAll();
+
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "err" ) == option->end(), "Retrieving history returned error" );
 }
 
 void RevertTest::deleteRequest()

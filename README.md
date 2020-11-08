@@ -110,12 +110,12 @@ This endpoint returns the entity without its parent wrapper.
 
 ### Revert Entity
 An endpoint to revert an entity to the specified version. The implementation
-restores the versioned entity (while versioning the current *live* document).
+replaces the current document with the versioned entity.
 This is a *true revert* in that the exact same version of the document is restored.
-The *version history* document created for the revert (current document move to
-history) will also hold a custom `metadata` sub-document with a `revertedTo`
-property that holds the version history id that was reverted.  This information
-can be used to track revert actions that were applied on the document.
+The *version history* document created for the revert (exact same nested entity
+as the version being reverted to) will also hold a custom `metadata` sub-document
+with a `revertedFrom` property that holds the version history id that was reverted.
+This information can be used to track revert actions that were applied on the document.
 
 This endpoint may not be follow the revert policy followed by the client.
 Clients may wish to modify certain attributes (modification date etc.) before
@@ -123,8 +123,11 @@ reverting.  It should be easy to accomplish that by retrieving the desired
 version, modifying as appropriate and saving through the usual means.
 
 ```shell script
-GET /version/history/revert/<version document bson oid>/<database>/<collection>/<entity bson oid>
+PUT /version/history/revert/<version document bson oid>/<database>/<collection>/<entity bson oid>
 ```
+
+**Note:** This is a `PUT` endpoint since data is modified on the server.  No
+payload is expected from the client for this API endpoint.
 
 ## Configuration
 The service can be configured via command line parameters.  The following options

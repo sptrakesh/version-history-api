@@ -179,7 +179,7 @@ paths:
             $ref: "#/definitions/Error"
 
   /version/history/revert/{historyObjectId}/{database}/{collection}/{entityObjectId}:
-    get:
+    put:
       summary: Endpoint to revert the specified document to its previous version.
       description: Replaces the specified entity with its previous version specified by `historyObjectId`.
       produces:

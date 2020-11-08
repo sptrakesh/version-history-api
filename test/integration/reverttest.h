@@ -18,12 +18,12 @@ namespace spt
   private slots:
     void initTestCase();
     void getRequest();
-    void getBson();
     void optionsRequest();
     void postRequest();
     void invalidRequest();
     void nonexistentRequest();
     void putRequest();
+    void putBson();
     void deleteRequest();
     void cleanupTestCase();
 
