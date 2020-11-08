@@ -45,7 +45,7 @@ namespace spt::http::bson::internal
       auto sv = std::string_view{
           reinterpret_cast<const char *>( doc->view().data() ),
           doc->view().length() };
-      const auto& [data, compressed] = http::compress( sv );
+      auto [data, compressed] = http::compress( sv );
 
       const auto et = std::chrono::steady_clock::now();
       const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
@@ -53,8 +53,11 @@ namespace spt::http::bson::internal
           req.method(), req.uri().path, util::hostname(), ip, format,
           corId, 200, int32_t( data.size() ),
           std::chrono::system_clock::now(), delta.count(), compress };
+      if ( !compressed ) metric.outputSize = int32_t( sv.size() );
       db::save( metric );
-      write( 200, data, res, compressed );
+
+      if ( compressed ) write( 200, std::move( data ), res, compressed );
+      else write( 200, std::string{ sv.data(), sv.size() }, res, compressed );
     }
     catch ( const bsoncxx::exception& b )
     {

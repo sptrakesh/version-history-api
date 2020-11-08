@@ -53,8 +53,8 @@ void spt::http::json::handleList(
 
     if ( result.code != 200 ) return error( result.code, "Error retrieving version history", res );
 
-    const auto js = bsoncxx::to_json( result.data->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
-    const auto& [data, compressed] = http::compress( js );
+    auto js = bsoncxx::to_json( result.data->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
+    auto [data, compressed] = http::compress( js );
 
     const auto et = std::chrono::steady_clock::now();
     const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
@@ -62,8 +62,11 @@ void spt::http::json::handleList(
         req.method(), req.uri().path, util::hostname(), ip, format,
         corId, 200, int32_t( data.size() ),
         std::chrono::system_clock::now(), delta.count(), compress };
+    if ( !compressed ) metric.outputSize = int32_t( js.size() );
     db::save( metric );
-    write( 200, data, res, compressed );
+
+    if ( compressed ) write( 200, std::move( data ), res, compressed );
+    else write( 200, std::move( js ), res, compressed );
   }
   catch ( const bsoncxx::exception& b )
   {

@@ -39,20 +39,20 @@ void spt::http::bson::unsupported( const nghttp2::asio_http2::server::response& 
   write( 405, body, res );
 }
 
-void spt::http::bson::error( int code, const std::string_view message, const nghttp2::asio_http2::server::response& res )
+void spt::http::bson::error( int code, std::string message, const nghttp2::asio_http2::server::response& res )
 {
   using bsoncxx::builder::stream::document;
   using bsoncxx::builder::stream::finalize;
 
   auto doc = document{} <<
     "status" << code <<
-    "cause" << message <<
+    "cause" << std::move( message ) <<
     finalize;
   auto body = std::string{ reinterpret_cast<const char*>( doc.view().data() ), doc.view().length() };
-  write( code, body, res );
+  write( code, std::move( body ), res );
 }
 
-void spt::http::bson::output( const std::string_view message, const nghttp2::asio_http2::server::response& res )
+void spt::http::bson::output( std::string message, const nghttp2::asio_http2::server::response& res )
 {
   static constexpr auto code = 200;
   using bsoncxx::builder::stream::document;
@@ -60,13 +60,13 @@ void spt::http::bson::output( const std::string_view message, const nghttp2::asi
 
   auto doc = document{} <<
     "status" << code <<
-    "cause" << message <<
+    "cause" << std::move( message ) <<
     finalize;
   auto body = std::string{ reinterpret_cast<const char*>( doc.view().data() ), doc.view().length() };
-  write( code, body, res );
+  write( code, std::move( body ), res );
 }
 
-void spt::http::bson::write( int code, const std::string& bson,
+void spt::http::bson::write( int code, std::string bson,
     const nghttp2::asio_http2::server::response& res, bool compress )
 {
   auto headers = nghttp2::asio_http2::header_map{
@@ -78,6 +78,6 @@ void spt::http::bson::write( int code, const std::string& bson,
     headers.emplace( "content-encoding", nghttp2::asio_http2::header_value{ "gzip", false } );
   }
   res.write_head( code, std::move( headers ) );
-  res.end( bson );
+  res.end( std::move( bson ) );
 }
 

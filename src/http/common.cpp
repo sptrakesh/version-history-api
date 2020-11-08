@@ -28,7 +28,7 @@ auto spt::http::compress( std::string_view data ) -> Output
   if ( data.size() < 128 )
   {
     LOG_INFO << "Uncompressed size: " << int( data.size() ) << " less than 128, not compressing";
-    return { std::string{ data.data(), data.size() }, false };
+    return { {}, false };
   }
 
   bio::stream<bio::array_source> source( data.data(), data.size() );

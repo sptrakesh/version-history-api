@@ -48,7 +48,7 @@ void spt::http::json::output( const std::string_view message, const nghttp2::asi
   write( 200, oss.str(), res );
 }
 
-void spt::http::json::write( int code, const std::string& json,
+void spt::http::json::write( int code, std::string json,
     const nghttp2::asio_http2::server::response& res, bool compress )
 {
   auto headers = nghttp2::asio_http2::header_map{
@@ -60,5 +60,5 @@ void spt::http::json::write( int code, const std::string& json,
     headers.emplace( "content-encoding", nghttp2::asio_http2::header_value{ "gzip", false } );
   }
   res.write_head( code, std::move( headers ) );
-  res.end( json );
+  res.end( std::move( json ) );
 }

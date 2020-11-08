@@ -147,7 +147,12 @@ paths:
   /version/history/revert/{historyObjectId}/{database}/{collection}/{entityObjectId}:
     put:
       summary: Endpoint to revert the specified document to its previous version.
-      description: Replaces the specified entity with its previous version specified by `historyObjectId`.
+      description: |
+        Replaces the specified entity with its previous version specified by
+        `historyObjectId`.
+
+        __Note:__ This is a `PUT` operation as it modifies data in the database.
+        No __payload__ is expected from the client.
       produces:
         - application/json
         - application/bson
