@@ -126,7 +126,7 @@ version, modifying as appropriate and saving through the usual means.
 PUT /version/history/revert/<version document bson oid>/<database>/<collection>/<entity bson oid>
 ```
 
-**Note:** This is a `PUT` endpoint since data is modified on the server.  No
+**Note:** This is a `PUT` endpoint since data is modified in the database.  No
 payload is expected from the client for this API endpoint.
 
 ## Configuration
@@ -143,11 +143,16 @@ via the `--metrics-database` command line option.  This option is used only if
 * `metricsCollection` - The collection in which api metrics will be saved.  Specify
 via the `--metrics-collection` command line option.  This option is used only if
 `mongoServiceHost` is defined.
-* `port` - The port the service listens on.  Default `6000`.
+* `port` - The port the service listens on.  Default `6100`.  Specify via the
+`--port` command line option.
 * `threads` - The number of Asio I/O threads to use for the service.  Defaults
-to the *hardware concurrency* value.
+to the *hardware concurrency* value.  Specify via the `--threads` command line option.
 * `logLevel` - The logging level for the service.  One of `critical|warn|info|debug`.
 Default `info`.  Specify via the `--log-level` command line option.
 
 ## Acknowledgements
-* [nghttp2](https://github.com/nghttp2/nghttp2)
+* **[nghttp2](https://github.com/nghttp2/nghttp2)** - HTTP/2 server framework.
+* **[MongoCXX](http://mongocxx.org/)** - MongoDB C++ driver for BSON library.
+* **[NanoLog](https://github.com/Iyengar111/NanoLog)** - Logging framework used
+for the server.  I modified the implementation for daily rolling log files.
+* **[Clara](https://github.com/catchorg/Clara)** - Command line options parser.

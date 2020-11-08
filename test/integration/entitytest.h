@@ -30,6 +30,7 @@ namespace spt
     void putRequestBson();
     void deleteRequestJson();
     void deleteRequestBson();
+    void cleanupTestCase();
 
   private:
     QString url{ "http://localhost:6106/version/history/entity/" };

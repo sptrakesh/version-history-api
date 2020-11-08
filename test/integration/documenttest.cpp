@@ -8,34 +8,73 @@
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
 
-#include <bsoncxx/json.hpp>
-#include <bsoncxx/validate.hpp>
 #include <bsoncxx/types.hpp>
+#include <bsoncxx/validate.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
 
 using spt::DocumentTest;
 
 void DocumentTest::initTestCase()
 {
-  QNetworkRequest req;
-  req.setRawHeader( "accept", "application/bson" );
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
-  const auto endpoint = QString( "%1itest/test/%4" ).arg( listUrl ).arg( entityId );
-  const auto reply = get( endpoint, &req );
+  const auto create = [this]()
+  {
+    auto oid = bsoncxx::oid{};
 
-  QVERIFY2( reply->error() == QNetworkReply::NoError, "Error retrieving api response" );
-  const auto body = reply->readAll();
+    auto req = document{} <<
+      "action" << "create" <<
+      "database" << "itest" <<
+      "collection" << "test" <<
+      "document" <<
+        open_document <<
+          "_id" << oid <<
+          "prop1" << "value1" <<
+          "prop2" << 4 <<
+          "prop3" << false <<
+          "prop4" << bsoncxx::types::b_null{} <<
+        close_document <<
+      finalize;
+    const auto reqv = req.view();
 
-  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
-  QVERIFY2( option.has_value(), "Response not BSON" );
-  QVERIFY2( option->find( "results" ) != option->end(), "Matching entities not returned" );
+    auto payload = QByteArray( reinterpret_cast<const char*>( reqv.data() ), reqv.length() );
+    auto response = execute( payload );
+    auto opt = bsoncxx::validate( reinterpret_cast<const uint8_t*>( response.data() ), response.size() );
+    QVERIFY2( opt, "Error creating test document" );
+    QVERIFY2( opt->find( "err" ) == opt->end(), "Creating document returned error" );
+    historyId = QString::fromStdString( (*opt)["_id"].get_oid().value.to_string() );
+  };
 
-  QVERIFY2( (*option)["results"].type() == bsoncxx::type::k_array, "Results not array" );
+  const auto update = [this]()
+  {
+    auto req = document{} <<
+      "action" << "update" <<
+      "database" << "itest" <<
+      "collection" << "test" <<
+      "document" <<
+        open_document <<
+          "_id" << bsoncxx::oid{ historyId.toStdString() } <<
+          "prop1" << "value1" <<
+          "prop2" << 40 <<
+          "prop3" << true <<
+          "prop4" << bsoncxx::types::b_null{} <<
+        close_document <<
+      finalize;
+    const auto reqv = req.view();
 
-  const auto doc = (*option)["results"][0].get_document();
-  qDebug() << QString::fromStdString( bsoncxx::to_json( doc ) );
-  historyId = QString::fromStdString( doc.value["_id"].get_oid().value.to_string() );
-  qDebug() << historyId;
+    auto payload = QByteArray( reinterpret_cast<const char*>( reqv.data() ), reqv.length() );
+    auto response = execute( payload );
+    auto opt = bsoncxx::validate( reinterpret_cast<const uint8_t*>( response.data() ), response.size() );
+    QVERIFY2( opt, "Error updating test document" );
+    QVERIFY2( opt->find( "err" ) == opt->end(), "Updating document returned error" );
+  };
+
+  create();
+  update();
+  remove( historyId );
 }
 
 void DocumentTest::getRequestJson()
@@ -82,7 +121,6 @@ void DocumentTest::getRequestBson()
 void DocumentTest::optionsRequest()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = custom( endpoint, "OPTIONS", &req );
@@ -239,4 +277,9 @@ void DocumentTest::deleteRequestBson()
   const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
   QVERIFY2( option.has_value(), "Response not BSON" );
   QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void DocumentTest::cleanupTestCase()
+{
+  remove( historyId );
 }

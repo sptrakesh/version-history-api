@@ -32,6 +32,9 @@ namespace spt
     ReplyPointer put( const QString& url, const QByteArray& data,
         QNetworkRequest* req );
 
+    QByteArray execute( const QByteArray& payload );
+    void remove( const QString& entityId );
+
   private:
     QNetworkAccessManager mgr;
   };

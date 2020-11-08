@@ -10,15 +10,78 @@
 
 #include <bsoncxx/validate.hpp>
 #include <bsoncxx/types.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
 
 using spt::ListTest;
+
+void ListTest::initTestCase()
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  const auto create = [this]()
+  {
+    auto oid = bsoncxx::oid{};
+    entityId = QString::fromStdString( oid.to_string() );
+
+    auto req = document{} <<
+      "action" << "create" <<
+      "database" << "itest" <<
+      "collection" << "test" <<
+      "document" <<
+        open_document <<
+          "_id" << oid <<
+          "prop1" << "value1" <<
+          "prop2" << 4 <<
+          "prop3" << false <<
+          "prop4" << bsoncxx::types::b_null{} <<
+        close_document <<
+      finalize;
+    const auto reqv = req.view();
+
+    auto payload = QByteArray( reinterpret_cast<const char*>( reqv.data() ), reqv.length() );
+    auto response = execute( payload );
+    auto opt = bsoncxx::validate( reinterpret_cast<const uint8_t*>( response.data() ), response.size() );
+    QVERIFY2( opt, "Error creating test document" );
+    QVERIFY2( opt->find( "err" ) == opt->end(), "Creating document returned error" );
+  };
+
+  const auto update = [this]()
+  {
+    auto req = document{} <<
+      "action" << "update" <<
+      "database" << "itest" <<
+      "collection" << "test" <<
+      "document" <<
+        open_document <<
+          "_id" << bsoncxx::oid{ entityId.toStdString() } <<
+          "prop1" << "value1" <<
+          "prop2" << 40 <<
+          "prop3" << true <<
+          "prop4" << bsoncxx::types::b_null{} <<
+        close_document <<
+      finalize;
+    const auto reqv = req.view();
+
+    auto payload = QByteArray( reinterpret_cast<const char*>( reqv.data() ), reqv.length() );
+    auto response = execute( payload );
+    auto opt = bsoncxx::validate( reinterpret_cast<const uint8_t*>( response.data() ), response.size() );
+    QVERIFY2( opt, "Error updating test document" );
+    QVERIFY2( opt->find( "err" ) == opt->end(), "Updating document returned error" );
+  };
+
+  create();
+  update();
+  remove( entityId );
+}
 
 void ListTest::getRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = get( endpoint, &req );
 
@@ -43,7 +106,6 @@ void ListTest::getRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = get( endpoint, &req );
 
@@ -61,7 +123,6 @@ void ListTest::optionsRequest()
 {
   QNetworkRequest req;
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = custom( endpoint, "OPTIONS", &req );
   QVERIFY2( reply->error() == QNetworkReply::NoError, "Error making OPTIONS request" );
@@ -72,7 +133,6 @@ void ListTest::postRequestJson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = post( endpoint, {}, &req );
 
@@ -88,7 +148,6 @@ void ListTest::postRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = post( endpoint, {}, &req );
 
@@ -104,8 +163,7 @@ void ListTest::invalidRequestJson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = "5f3bc9e2502422053e0";
-  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( "abc123" );
   const auto reply = get( endpoint, &req );
 
   QVERIFY2( reply->error() != QNetworkReply::NoError, "Invalid BSON objectId did not return error" );
@@ -120,8 +178,7 @@ void ListTest::invalidRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = "5f3bc9e2502422053e0";
-  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( "abc123" );
   const auto reply = get( endpoint, &req );
 
   QVERIFY2( reply->error() != QNetworkReply::NoError, "Invalid BSON objectId did not return error" );
@@ -136,8 +193,8 @@ void ListTest::nonexistentRequestJson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = QString::fromStdString( bsoncxx::oid{}.to_string() );
-  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const QString oid = QString::fromStdString( bsoncxx::oid{}.to_string() );
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( oid );
   const auto reply = get( endpoint, &req );
 
   QVERIFY2( reply->error() != QNetworkReply::NoError, "Non-existent BSON objectId did not return error" );
@@ -152,8 +209,8 @@ void ListTest::nonexistentRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = QString::fromStdString( bsoncxx::oid{}.to_string() );
-  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
+  const QString oid = QString::fromStdString( bsoncxx::oid{}.to_string() );
+  const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( oid );
   const auto reply = get( endpoint, &req );
 
   QVERIFY2( reply->error() != QNetworkReply::NoError, "Non-existent BSON objectId did not return error" );
@@ -168,7 +225,6 @@ void ListTest::putRequestJson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = put( endpoint, {}, &req );
 
@@ -184,7 +240,6 @@ void ListTest::putRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = put( endpoint, {}, &req );
 
@@ -200,7 +255,6 @@ void ListTest::deleteRequestJson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = custom( endpoint, "DELETE", &req );
 
@@ -216,7 +270,6 @@ void ListTest::deleteRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = "5f3bc9e2502422053e08f9f1";
   const auto endpoint = QString( "%1itest/test/%4" ).arg( url ).arg( entityId );
   const auto reply = custom( endpoint, "DELETE", &req );
 
@@ -225,4 +278,9 @@ void ListTest::deleteRequestBson()
   const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
   QVERIFY2( option.has_value(), "Response not BSON" );
   QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void ListTest::cleanupTestCase()
+{
+  remove( entityId );
 }

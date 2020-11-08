@@ -16,6 +16,7 @@ namespace spt
     ListTest( QObject* parent = nullptr ) : BaseTest( parent ) {}
 
   private slots:
+    void initTestCase();
     void getRequestJson();
     void getRequestBson();
     void optionsRequest();
@@ -29,9 +30,11 @@ namespace spt
     void putRequestBson();
     void deleteRequestJson();
     void deleteRequestBson();
+    void cleanupTestCase();
 
   private:
     QString url{ "http://localhost:6106/version/history/list/" };
+    QString entityId;
   };
 }
 

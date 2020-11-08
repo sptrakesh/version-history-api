@@ -15,7 +15,6 @@ int main( int argc, char const * const * argv )
   using clara::Opt;
 
   bool console = false;
-  int logBuffer = 3;
   std::string dir{"logs/"};
   bool help = false;
   auto& conf = spt::model::Configuration::instance();
@@ -29,7 +28,6 @@ int main( int argc, char const * const * argv )
       Opt(conf.metricsCollection, "api")["-f"]["--metrics-collection"]("Mongo collection where metrics are stored (default api)") |
       Opt(conf.port, "6100")["-p"]["--port"]("Port on which to listen (default 6100)") |
       Opt(conf.threads, "8")["-n"]["--threads"]("Number of server threads to spawn (default system)") |
-      Opt(logBuffer, "3")["-g"]["--buffer"]("Buffer size for async logging (default 3)") |
       Opt(conf.logLevel, "info")["-l"]["--log-level"]("Log level to use [debug|info|warn|critical] (default info).") |
       Opt(console, "false")["-i"]["--console"]("Log to console (default false)") |
       Opt(dir, "logs/")["-o"]["--dir"]("Log directory (default logs/)");
@@ -49,7 +47,6 @@ int main( int argc, char const * const * argv )
 
   std::cout << "Starting server with options\n" <<
     "console: " << std::boolalpha << console << '\n' <<
-    "logBuffer: " << logBuffer << '\n' <<
     "options: " << conf.str() << '\n' <<
     "dir: " << dir << '\n';
 
@@ -57,7 +54,7 @@ int main( int argc, char const * const * argv )
   else if ( conf.logLevel == "info" ) nanolog::set_log_level( nanolog::LogLevel::INFO );
   else if ( conf.logLevel == "warn" ) nanolog::set_log_level( nanolog::LogLevel::WARN );
   else if ( conf.logLevel == "critical" ) nanolog::set_log_level( nanolog::LogLevel::CRIT );
-  nanolog::initialize( nanolog::NonGuaranteedLogger( logBuffer ), dir, "version-history-api", console );
+  nanolog::initialize( nanolog::GuaranteedLogger(), dir, "version-history-api", console );
 
   return spt::start();
 }

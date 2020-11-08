@@ -36,7 +36,7 @@ namespace spt
     QString url{ "http://localhost:6106/version/history/revert/" };
     QString listUrl{ "http://localhost:6106/version/history/list/" };
     QString historyId;
-    const QString entityId = "5f3bc9e2502422053e08f9f1";
+    QString entityId;
   };
 }
 
