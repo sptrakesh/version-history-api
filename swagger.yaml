@@ -34,26 +34,9 @@ paths:
           required: true
       responses:
         200:
-          description: List of _version history_ document metadata.
+          description: Document with a list of _version history_ summary documents.
           schema:
-            type: object
-            required:
-              - _id
-              - action
-              - created
-            properties:
-              _id:
-                type: string
-                description: BSON Object ID for the history document.
-                example: 5f3bc9e2502422053e08f9f1
-              action:
-                type: string
-                description: The `action` which resulted in the history document being created.  One of `create|update|delete`.
-                example: create
-              created:
-                type: string
-                format: date-time
-                description: The timestamp at which the version was created.
+            $ref: "#/definitions/HistorySummary"
         400:
           description: If `objectId` is not a valid BSON object id.
           schema:
@@ -91,31 +74,7 @@ paths:
         200:
           description: The complete version history document.  The document versioned is available as the `entity` sub-document.
           schema:
-            type: object
-            required:
-              - _id
-              - action
-              - created
-              - entity
-            properties:
-              _id:
-                type: string
-                description: BSON Object ID for the history document.
-                example: 5f3bc9e2502422053e08f9f1
-              action:
-                type: string
-                description: The `action` which resulted in the history document being created.  One of `create|update|delete`.
-                example: update
-              created:
-                type: string
-                format: date-time
-                description: The timestamp at which the version was created.
-              entity:
-                type: object
-                description: The document that was versioned.
-              metadata:
-                type: object
-                description: Optional metadata associted with the version.  This is user supplied information when submitting payloads to `mongo-service`.
+            $ref: "#/definitions/HistoryDocument"
         400:
           description: If `objectId` is not a valid BSON object id.
           schema:
@@ -255,3 +214,87 @@ definitions:
         type: string
         description: A short description of the cause of error.
         example: "Not found"
+
+  HistorySummary:
+    description: Version history summary information.
+    type: object
+    required:
+      - results
+    properties:
+      results:
+        type: array
+        items:
+          type: object
+          required:
+            - _id
+            - action
+            - created
+          properties:
+            _id:
+              type: string
+              description: BSON Object ID for the history document.
+              example: 5f3bc9e2502422053e08f9f1
+            action:
+              type: string
+              description: The `action` which resulted in the history document being created.
+              enum:
+                - create
+                - update
+                - delete
+              example: create
+            created:
+              type: string
+              format: date-time
+              description: The timestamp at which the version was created.
+
+  HistoryDocument:
+    description: Standard structure for version history document.
+    type: object
+    required:
+      - _id
+      - database
+      - collection
+      - action
+      - entity
+      - created
+    properties:
+      _id:
+        type: string
+        description: BSON Object ID for the history document.
+        example: 5f3bc9e2502422053e08f9f1
+      database:
+        type: string
+        description: Database in which the versioned entity is (or was) stored.
+        example: sptdb
+      collection:
+        type: string
+        description: Collection in which the versioned entity is (or was) stored.
+        example: users
+      action:
+        type: string
+        description: The `action` which resulted in the history document being created.
+        enum:
+          - create
+          - update
+          - delete
+        example: update
+      created:
+        type: string
+        format: date-time
+        description: The timestamp at which the version was created.
+      entity:
+        type: object
+        description: The document that was versioned.  At the very least it will contain an `_id` property as documented here.  The document will have other properties as was saved originally.
+        properties:
+          _id:
+            type: string
+            description: BSON Object ID for the versioned entity.
+            example: 5f3bc9e2502422053e08f9f1
+      metadata:
+        type: object
+        description: Optional metadata associted with the version.  This is user supplied information when submitting payloads to `mongo-service`.
+        properties:
+          revertedFrom:
+            type: string
+            description: BSON Object Id of the version history document which was reverted, leading to this version being created.
+            example: 5f3bc9e2502422053e08f9f1
