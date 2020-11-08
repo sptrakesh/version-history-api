@@ -3,27 +3,41 @@
 //
 
 #include "common.h"
-#include "context.h"
+#include "bson/output.h"
+#include "json/output.h"
 #include "handlers.h"
-
-#include <unordered_set>
-#include <boost/algorithm/string/predicate.hpp>
 
 void spt::http::handleRoot( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
 {
-  auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
-  auto static const paths = std::unordered_set<std::string>{ "/", "/version/history/" };
+  const auto format = outputFormat( req );
+  return format == "application/bson" ?
+    bson::handleRoot( req, res ) : json::handleRoot( req, res );
+}
 
-  if ( methods.find( req.method() ) == std::cend( methods ) ) return unsupported( res );
+void spt::http::handleList( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+{
+  const auto of = outputFormat( req );
+  return of == "application/bson" ?
+      bson::handleList( req, res ) : json::handleList( req, res );
+}
 
-  if ( req.method() == "OPTIONS" ) return cors( res );
+void spt::http::handleDocument( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+{
+  const auto of = outputFormat( req );
+  return of == "application/bson" ?
+      bson::handleDocument( req, res ) : json::handleDocument( req, res );
+}
 
-  if ( req.uri().path == "/" || boost::algorithm::starts_with( req.uri().path, "/version/history/" ) )
-  {
-    return write( 200, R"({"status": 200, "cause": "ok"}
-)", res );
-  }
+void spt::http::handleEntity( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+{
+  const auto of = outputFormat( req );
+  return of == "application/bson" ?
+      bson::handleEntity( req, res ) : json::handleEntity( req, res );
+}
 
-  return error( 404, "Not found", res );
-
+void spt::http::handleRevert( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+{
+  const auto of = outputFormat( req );
+  return of == "application/bson" ?
+      bson::handleRevert( req, res ) : json::handleRevert( req, res );
 }

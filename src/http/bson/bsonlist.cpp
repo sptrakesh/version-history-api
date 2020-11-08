@@ -1,23 +1,20 @@
 //
-// Created by Rakesh on 10/10/2020.
+// Created by Rakesh on 08/11/2020.
 //
 
-#include "common.h"
-#include "handlers.h"
+#include "output.h"
 #include "db/storage.h"
+#include "http/common.h"
 #include "log/NanoLog.h"
-#include "model/config.h"
-#include "model/metric.h"
 #include "util/hostname.h"
 #include "util/split.h"
 
 #include <unordered_set>
 
-#include <bsoncxx/json.hpp>
-#include <bsoncxx/oid.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/exception/exception.hpp>
 
-void spt::http::handleList( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+void spt::http::bson::handleList( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
 {
   const auto st = std::chrono::steady_clock::now();
   auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
@@ -29,6 +26,7 @@ void spt::http::handleList( const nghttp2::asio_http2::server::request& req, con
     auto bearer = authorise( req );
     auto compress = shouldCompress( req );
     auto ip = ipaddress( req );
+    auto corId = correlationId( req );
 
     auto format = outputFormat( req );
     if ( format.empty() ) return error( 400, "Bad request", res );
@@ -46,36 +44,19 @@ void spt::http::handleList( const nghttp2::asio_http2::server::request& req, con
 
     if ( result.code != 200 ) return error( result.code, "Error retrieving version history", res );
 
-    if ( format == "application/bson" )
-    {
-      auto sv = std::string_view{
+    auto sv = std::string_view{
         reinterpret_cast<const char *>( result.data->view().data() ),
         result.data->view().length() };
-      const auto& [data, compressed] = http::compress( sv );
+    const auto& [data, compressed] = http::compress( sv );
 
-      const auto et = std::chrono::steady_clock::now();
-      const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
-      auto metric = model::Metric{ bsoncxx::oid{},
-          req.method(), req.uri().path, util::hostname(), ip, format,
-          200, int32_t( data.size() ),
-          std::chrono::system_clock::now(), delta.count(), compress };
-      db::save( metric );
-      writeBson( 200, data, res, compressed );
-    }
-    else
-    {
-      const auto js = bsoncxx::to_json( result.data->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
-      const auto& [data, compressed] = http::compress( js );
-
-      const auto et = std::chrono::steady_clock::now();
-      const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
-      auto metric = model::Metric{ bsoncxx::oid{},
-          req.method(), req.uri().path, util::hostname(), ip, format,
-          200, int32_t( data.size() ),
-          std::chrono::system_clock::now(), delta.count(), compress };
-      db::save( metric );
-      write( 200, data, res, compressed );
-    }
+    const auto et = std::chrono::steady_clock::now();
+    const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
+    auto metric = model::Metric{ bsoncxx::oid{},
+        req.method(), req.uri().path, util::hostname(), ip, format,
+        corId, 200, int32_t( data.size() ),
+        std::chrono::system_clock::now(), delta.count(), compress };
+    db::save( metric );
+    write( 200, data, res, compressed );
   }
   catch ( const bsoncxx::exception& b )
   {

@@ -1,10 +1,10 @@
 //
-// Created by Rakesh on 06/11/2020.
+// Created by Rakesh on 08/11/2020.
 //
 
-#include "common.h"
-#include "handlers.h"
+#include "output.h"
 #include "db/storage.h"
+#include "http/common.h"
 #include "log/NanoLog.h"
 #include "model/config.h"
 #include "model/metric.h"
@@ -18,7 +18,7 @@
 #include <bsoncxx/oid.hpp>
 #include <bsoncxx/exception/exception.hpp>
 
-namespace spt::http::internal
+namespace spt::http::json::internal
 {
   template <typename Function, typename... Args>
   void handle( const nghttp2::asio_http2::server::request& req,
@@ -37,43 +37,29 @@ namespace spt::http::internal
       auto bearer = authorise( req );
       auto compress = shouldCompress( req );
       auto ip = ipaddress( req );
+      auto corId = correlationId( req );
 
       auto format = outputFormat( req );
-      if ( format.empty() ) return error( 400, "Bad request", res );
+      if ( format.empty() || format != "application/json" )
+      {
+        LOG_DEBUG << "Invalid accept header " << format;
+        return error( 400, "Bad request", res );
+      }
 
       const auto& [doc, code] = fn( std::forward<Args>( args )... );
       if ( code != 200 ) return error( code, "Error retrieving version history", res );
 
-      if ( format == "application/bson" )
-      {
-        auto sv = std::string_view{
-            reinterpret_cast<const char *>( doc->view().data() ),
-            doc->view().length() };
-        const auto& [data, compressed] = http::compress( sv );
+      const auto js = bsoncxx::to_json( doc->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
+      const auto& [data, compressed] = http::compress( js );
 
-        const auto et = std::chrono::steady_clock::now();
-        const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
-        auto metric = model::Metric{ bsoncxx::oid{},
-            req.method(), req.uri().path, util::hostname(), ip, format,
-            200, int32_t( data.size() ),
-            std::chrono::system_clock::now(), delta.count(), compress };
-        db::save( metric );
-        writeBson( 200, data, res, compressed );
-      }
-      else
-      {
-        const auto js = bsoncxx::to_json( doc->view(), bsoncxx::ExtendedJsonMode::k_relaxed );
-        const auto& [data, compressed] = http::compress( js );
-
-        const auto et = std::chrono::steady_clock::now();
-        const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
-        auto metric = model::Metric{ bsoncxx::oid{},
-            req.method(), req.uri().path, util::hostname(), ip, format,
-            200, int32_t( data.size() ),
-            std::chrono::system_clock::now(), delta.count(), compress };
-        db::save( metric );
-        write( 200, data, res, compressed );
-      }
+      const auto et = std::chrono::steady_clock::now();
+      const auto delta = std::chrono::duration_cast<std::chrono::nanoseconds>( et - st );
+      auto metric = model::Metric{ bsoncxx::oid{},
+          req.method(), req.uri().path, util::hostname(), ip, format,
+          corId, 200, int32_t( data.size() ),
+          std::chrono::system_clock::now(), delta.count(), compress };
+      db::save( metric );
+      write( 200, data, res, compressed );
     }
     catch ( const bsoncxx::exception& b )
     {
@@ -82,7 +68,7 @@ namespace spt::http::internal
     }
     catch ( const std::exception& ex )
     {
-      LOG_WARN << "Error procesing request " << ex.what();
+      LOG_WARN << "Error processing request " << ex.what();
       return error( 500, "Internal server error", res );
     }
   }
@@ -108,25 +94,25 @@ namespace spt::http::internal
     }
     catch ( const std::exception& ex )
     {
-      LOG_WARN << "Error procesing request " << ex.what();
+      LOG_WARN << "Error processing request " << ex.what();
       return error( 500, "Internal server error", res );
     }
   }
 }
 
-void spt::http::handleDocument( const nghttp2::asio_http2::server::request& req,
+void spt::http::json::handleDocument( const nghttp2::asio_http2::server::request& req,
     const nghttp2::asio_http2::server::response& res )
 {
   return internal::handleDocument( req, res, &db::document );
 }
 
-void spt::http::handleEntity( const nghttp2::asio_http2::server::request& req,
+void spt::http::json::handleEntity( const nghttp2::asio_http2::server::request& req,
     const nghttp2::asio_http2::server::response& res )
 {
   return internal::handleDocument( req, res, &db::entity );
 }
 
-void spt::http::handleRevert( const nghttp2::asio_http2::server::request& req,
+void spt::http::json::handleRevert( const nghttp2::asio_http2::server::request& req,
     const nghttp2::asio_http2::server::response& res )
 {
   auto static const methods = std::unordered_set<std::string>{ "PUT", "OPTIONS" };
@@ -146,7 +132,8 @@ void spt::http::handleRevert( const nghttp2::asio_http2::server::request& req,
   }
   catch ( const std::exception& ex )
   {
-    LOG_WARN << "Error procesing request " << ex.what();
+    LOG_WARN << "Error processing request " << ex.what();
     return error( 500, "Internal server error", res );
   }
 }
+

@@ -38,7 +38,7 @@ void EntityTest::initTestCase()
   qDebug() << historyId;
 }
 
-void EntityTest::getRequest()
+void EntityTest::getRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
@@ -60,7 +60,7 @@ void EntityTest::getRequest()
   QVERIFY2( !obj.contains( "entity"), "wrapper entity returned" );
 }
 
-void EntityTest::getBson()
+void EntityTest::getRequestBson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
@@ -82,17 +82,16 @@ void EntityTest::getBson()
 void EntityTest::optionsRequest()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = custom( endpoint, "OPTIONS", &req );
   QVERIFY2( reply->error() == QNetworkReply::NoError, "Error making OPTIONS request" );
 }
 
-void EntityTest::postRequest()
+void EntityTest::postRequestJson()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = post( endpoint, {}, &req );
@@ -104,7 +103,22 @@ void EntityTest::postRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void EntityTest::invalidRequest()
+void EntityTest::postRequestBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
+  const auto reply = post( endpoint, {}, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "POST allowed on api endpoint" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void EntityTest::invalidRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
@@ -119,7 +133,22 @@ void EntityTest::invalidRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void EntityTest::nonexistentRequest()
+void EntityTest::invalidRequestBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1abc123" ).arg( url );
+  const auto reply = get( endpoint, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "Invalid BSON objectId did not return error" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void EntityTest::nonexistentRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
@@ -135,10 +164,26 @@ void EntityTest::nonexistentRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void EntityTest::putRequest()
+void EntityTest::nonexistentRequestBson()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/bson" );
+
+  const QString entityId = QString::fromStdString( bsoncxx::oid{}.to_string() );
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( entityId );
+  const auto reply = get( endpoint, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "Non-existent BSON objectId did not return error" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void EntityTest::putRequestJson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = put( endpoint, {}, &req );
@@ -150,10 +195,25 @@ void EntityTest::putRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void EntityTest::deleteRequest()
+void EntityTest::putRequestBson()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
+  const auto reply = put( endpoint, {}, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "PUT allowed on api endpoint" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void EntityTest::deleteRequestJson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = custom( endpoint, "DELETE", &req );
@@ -163,4 +223,19 @@ void EntityTest::deleteRequest()
   const auto obj = doc.object();
   QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
+}
+
+void EntityTest::deleteRequestBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
+  const auto reply = custom( endpoint, "DELETE", &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "DELETE allowed on api endpoint" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
 }

@@ -37,6 +37,7 @@ bsoncxx::document::value spt::model::Metric::bson() const
     "date" << bsoncxx::types::b_date{ ms };
 
   if ( !ipaddress.empty() ) doc << "ipaddress" << ipaddress;
+  if ( !correlationId.empty() ) doc << "correlationId" << correlationId;
 
   return doc << finalize;
 }

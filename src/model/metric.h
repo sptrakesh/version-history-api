@@ -25,6 +25,7 @@ namespace spt::model
     std::string host;
     std::string ipaddress;
     std::string contentType;
+    std::string correlationId;
     int32_t status;
     int32_t outputSize;
     std::chrono::time_point<std::chrono::system_clock> date;

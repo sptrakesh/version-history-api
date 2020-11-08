@@ -38,7 +38,7 @@ void DocumentTest::initTestCase()
   qDebug() << historyId;
 }
 
-void DocumentTest::getRequest()
+void DocumentTest::getRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
@@ -60,7 +60,7 @@ void DocumentTest::getRequest()
   QVERIFY2( obj.contains( "entity"), "entity not returned" );
 }
 
-void DocumentTest::getBson()
+void DocumentTest::getRequestBson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
@@ -89,10 +89,10 @@ void DocumentTest::optionsRequest()
   QVERIFY2( reply->error() == QNetworkReply::NoError, "Error making OPTIONS request" );
 }
 
-void DocumentTest::postRequest()
+void DocumentTest::postRequestJson()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = post( endpoint, {}, &req );
@@ -104,7 +104,22 @@ void DocumentTest::postRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void DocumentTest::invalidRequest()
+void DocumentTest::postRequestBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
+  const auto reply = post( endpoint, {}, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "POST allowed on api endpoint" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void DocumentTest::invalidRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
@@ -119,7 +134,22 @@ void DocumentTest::invalidRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void DocumentTest::nonexistentRequest()
+void DocumentTest::invalidRequestBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1abc123" ).arg( url );
+  const auto reply = get( endpoint, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "Invalid BSON objectId did not return error" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void DocumentTest::nonexistentRequestJson()
 {
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
@@ -135,10 +165,26 @@ void DocumentTest::nonexistentRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void DocumentTest::putRequest()
+void DocumentTest::nonexistentRequestBson()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/bson" );
+
+  const QString entityId = QString::fromStdString( bsoncxx::oid{}.to_string() );
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( entityId );
+  const auto reply = get( endpoint, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "Non-existent BSON objectId did not return error" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void DocumentTest::putRequestJson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = put( endpoint, {}, &req );
@@ -150,10 +196,25 @@ void DocumentTest::putRequest()
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
 }
 
-void DocumentTest::deleteRequest()
+void DocumentTest::putRequestBson()
 {
   QNetworkRequest req;
-  req.setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
+  const auto reply = put( endpoint, {}, &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "PUT allowed on api endpoint" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+}
+
+void DocumentTest::deleteRequestJson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/json" );
 
   const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
   const auto reply = custom( endpoint, "DELETE", &req );
@@ -163,4 +224,19 @@ void DocumentTest::deleteRequest()
   const auto obj = doc.object();
   QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
   QVERIFY2( !obj["cause"].toString().isEmpty(), "Error response does not have cause" );
+}
+
+void DocumentTest::deleteRequestBson()
+{
+  QNetworkRequest req;
+  req.setRawHeader( "accept", "application/bson" );
+
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( historyId );
+  const auto reply = custom( endpoint, "DELETE", &req );
+
+  QVERIFY2( reply->error() != QNetworkReply::NoError, "DELETE allowed on api endpoint" );
+  const auto body = reply->readAll();
+  const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
+  QVERIFY2( option.has_value(), "Response not BSON" );
+  QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
 }

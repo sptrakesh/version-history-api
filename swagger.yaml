@@ -1,7 +1,14 @@
 swagger: "2.0"
 info:
   title: Version History REST API
-  description: REST API for common actions around document version history stored in __MongoDB__ via `mongo-service`.
+  description: |
+    REST API for common actions around document version history stored in
+    __MongoDB__ via `mongo-service`.
+
+    Responses are returned either encoded in __BSON__ or __JSON__.
+
+    __JSON__ encoding is via the Mongo C driver utility function to convert
+    __BSON__ to __JSON__.
   version: 1.0.0
 schemes:
   - https

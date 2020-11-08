@@ -17,14 +17,19 @@ namespace spt
 
   private slots:
     void initTestCase();
-    void getRequest();
-    void getBson();
+    void getRequestJson();
+    void getRequestBson();
     void optionsRequest();
-    void postRequest();
-    void invalidRequest();
-    void nonexistentRequest();
-    void putRequest();
-    void deleteRequest();
+    void postRequestJson();
+    void postRequestBson();
+    void invalidRequestJson();
+    void invalidRequestBson();
+    void nonexistentRequestJson();
+    void nonexistentRequestBson();
+    void putRequestJson();
+    void putRequestBson();
+    void deleteRequestJson();
+    void deleteRequestBson();
 
   private:
     QString url{ "http://localhost:6106/version/history/entity/" };

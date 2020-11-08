@@ -5,8 +5,6 @@
 #include "common.h"
 #include "log/NanoLog.h"
 
-#include <iomanip>
-
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -17,54 +15,10 @@ void spt::http::cors( const nghttp2::asio_http2::server::response& res )
 {
   auto headers = nghttp2::asio_http2::header_map{
       {"Access-Control-Allow-Origin", {"*", false}},
-      {"Access-Control-Allow-Methods", {"GET,POST", false}}
+      {"Access-Control-Allow-Methods", {"GET,OPTIONS,PUT", false}}
   };
 
   res.write_head(204, headers);
-}
-
-void spt::http::write( int code, const std::string& json,
-    const nghttp2::asio_http2::server::response& res, bool compress )
-{
-  auto headers = nghttp2::asio_http2::header_map{
-      {"content-type", { "application/json; charset=utf-8", false } },
-      { "content-length", { std::to_string( json.size() ), false } }
-  };
-  if ( compress )
-  {
-    headers.emplace( "content-encoding", nghttp2::asio_http2::header_value{ "gzip", false } );
-  }
-  res.write_head( code, std::move( headers ) );
-  res.end( json );
-}
-
-void spt::http::writeBson( int code, const std::string& bson,
-    const nghttp2::asio_http2::server::response& res, bool compress )
-{
-  auto headers = nghttp2::asio_http2::header_map{
-      {"content-type", { "application/bson", false } },
-      { "content-length", { std::to_string( bson.size() ), false } }
-  };
-  if ( compress )
-  {
-    headers.emplace( "content-encoding", nghttp2::asio_http2::header_value{ "gzip", false } );
-  }
-  res.write_head( code, std::move( headers ) );
-  res.end( bson );
-}
-
-void spt::http::unsupported( const nghttp2::asio_http2::server::response& res )
-{
-  auto body = std::string{ R"({"status": 405, "cause": "Method Not Allowed"}
-)" };
-  write( 405, body, res );
-}
-
-void spt::http::error( int code, const std::string_view message, const nghttp2::asio_http2::server::response& res )
-{
-  std::ostringstream oss;
-  oss << "{\"status\": " << code << R"(, "cause": )" << std::quoted( message ) << "}\n";
-  write( code, oss.str(), res );
 }
 
 auto spt::http::compress( std::string_view data ) -> Output
@@ -89,20 +43,6 @@ auto spt::http::compress( std::string_view data ) -> Output
   return { std::move( str ), true };
 }
 
-std::string spt::http::decompress( const std::string& body )
-{
-  namespace bio = boost::iostreams;
-
-  bio::filtering_streambuf<bio::input> in;
-  in.push( boost::iostreams::gzip_decompressor() );
-  std::stringstream ss( body );
-  in.push( ss );
-
-  std::ostringstream decomp;
-  boost::iostreams::copy( in, decomp );
-  return decomp.str();
-}
-
 std::string spt::http::authorise( const nghttp2::asio_http2::server::request& req )
 {
   auto iter = req.header().find( "authorization" );
@@ -118,17 +58,11 @@ bool spt::http::shouldCompress( const nghttp2::asio_http2::server::request& req 
       iter->second.value.find( "gzip" ) != std::string::npos;
 }
 
-bool spt::http::isCompressed( const nghttp2::asio_http2::server::request& req )
-{
-  auto iter = req.header().find( "content-encoding" );
-  if ( iter == std::cend( req.header() ) ) iter = req.header().find( "Content-Encoding" );
-  return !( iter == std::cend( req.header() ) ) &&
-      iter->second.value.find( "gzip" ) != std::string::npos;
-}
-
 std::string spt::http::correlationId( const nghttp2::asio_http2::server::request& req )
 {
-  auto iter = req.header().find( "x-wp-correlation-id" );
+  auto iter = req.header().find( "x-spt-correlation-id" );
+  if ( iter == std::cend( req.header() ) ) iter = req.header().find( "X-Spt-Correlation-Id" );
+  if ( iter == std::cend( req.header() ) ) iter = req.header().find( "X-SPT-CORRELATION-ID" );
   return iter == std::cend( req.header() ) ? std::string{} : iter->second.value;
 }
 
@@ -139,7 +73,7 @@ std::string spt::http::outputFormat( const nghttp2::asio_http2::server::request&
   if ( iter == std::cend( header ) ) iter = header.find( "Accept" );
   if ( iter == std::cend( header ) )
   {
-    LOG_INFO << "No accept header in request";
+    LOG_WARN << "No accept header in request";
     return "";
   }
 
