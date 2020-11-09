@@ -68,7 +68,7 @@ void spt::http::bson::handleList( const nghttp2::asio_http2::server::request& re
   }
   catch ( const std::exception& ex )
   {
-    LOG_WARN << "Error procesing request " << ex.what();
+    LOG_WARN << "Error processing request " << ex.what();
     return error( 500, "Internal server error", res );
   }
 }

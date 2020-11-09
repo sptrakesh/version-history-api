@@ -8,7 +8,6 @@
 #include "db/impl/pool.h"
 #include "log/NanoLog.h"
 
-#include <bsoncxx/json.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 
 #include <chrono>
@@ -35,10 +34,8 @@ namespace spt::db::storage
     Pool& operator=( Pool&& ) = delete;
 
   private:
-    Pool()
+    Pool() : pool{ std::make_unique<spt::db::impl::Pool<spt::db::impl::Connection>>( spt::db::impl::create, impl::Configuration{} ) }
     {
-      auto config = impl::Configuration{};
-      pool = std::make_unique<spt::db::impl::Pool<spt::db::impl::Connection>>( spt::db::impl::create, std::move( config ) );
     }
 
     ~Pool() = default;

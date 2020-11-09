@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: Version History REST API
+  description: |
+    REST API for common actions around document version history stored in
+    __MongoDB__ via `mongo-service`.
+
+    Responses are returned either encoded in __BSON__ or __JSON__.
+
+    __JSON__ encoding is via the Mongo C driver utility function to convert
+    __BSON__ to __JSON__.
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  /version/history/list/{database}/{collection}/{objectId}:
+    get:
+      summary: Endpoint to retrieve metadata about history documents for specified entity.
+      description: Returns metadata in chronological order of all versions for the specified entity.
+      tags:
+        - VersionHistory
+      operationId: list
+      parameters:
+        - name: database
+          description: The database in which the entity is stored.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity is stored.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+        - name: objectId
+          description: The BSON object id for the entity.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      responses:
+        200:
+          description: Document with a list of _version history_ summary documents.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistorySummary"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/HistorySummary"
+        400:
+          description: If `objectId` is not a valid BSON object id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        404:
+          description: If the specified `objectId` does not exist in the `database:collection`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while retrieving the history document summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /version/history/document/{objectId}:
+    get:
+      summary: Endpoint to retrieve the full version history document.
+      description: Returns the full version history document identified by the specified BSON object id.
+      tags:
+        - VersionHistory
+      operationId: document
+      parameters:
+        - name: objectId
+          description: The BSON object id for the version history document.  This is usually derived from a call to the `list` endpoint.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      responses:
+        200:
+          description: The complete version history document.  The document versioned is available as the `entity` sub-document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryDocument"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/HistoryDocument"
+        400:
+          description: If `objectId` is not a valid BSON object id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        404:
+          description: If the specified `objectId` does not exist in the version history `database:collection`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while retrieving the history document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /version/history/entity/{objectId}:
+    get:
+      summary: Endpoint to retrieve the original document stored in version history.
+      description: Returns the __entity__ that was versioned.  Returns only the nested document without the version history wrapper.
+      tags:
+        - VersionHistory
+      operationId: entity
+      parameters:
+        - name: objectId
+          description: The BSON object id for the version history document.  This is usually derived from a call to the `list` endpoint.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      responses:
+        200:
+          description: The entity that was versioned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - _id
+                properties:
+                  _id:
+                    type: string
+                    description: BSON Object ID for the history document.
+                    example: 5f3bc9e2502422053e08f9f1
+            application/bson:
+              schema:
+                type: object
+                required:
+                  - _id
+                properties:
+                  _id:
+                    type: string
+                    description: BSON Object ID for the history document.
+                    example: 5f3bc9e2502422053e08f9f1
+        400:
+          description: If `objectId` is not a valid BSON object id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        404:
+          description: If the specified `objectId` does not exist in the version history `database:collection`.
+        417:
+          description: If the `mongo-service` returns an error while retrieving the history document.
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+
+  /version/history/revert/{historyObjectId}/{database}/{collection}/{entityObjectId}:
+    put:
+      summary: Endpoint to revert the specified document to its previous version.
+      description: |
+        Replaces the specified entity with its previous version specified by
+        `historyObjectId`.
+
+        __Note:__ This is a `PUT` operation as it modifies data in the database.
+        No __payload__ is expected from the client.
+      tags:
+        - VersionHistory
+      operationId: revert
+      parameters:
+        - name: historyObjectId
+          description: The BSON object id of the version history document to revert the entity to.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5fa9910b8a64e17d2911e67a
+        - name: database
+          description: The database in which the entity is stored.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity is stored.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+        - name: entityObjectId
+          description: The BSON object id for the entity to be reverted.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      responses:
+        200:
+          description: The entity that was reverted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - _id
+                properties:
+                  _id:
+                    type: string
+                    description: BSON Object ID for the history document.
+                    example: 5f3bc9e2502422053e08f9f1
+            application/bson:
+              schema:
+                type: object
+                required:
+                  - _id
+                properties:
+                  _id:
+                    type: string
+                    description: BSON Object ID for the history document.
+                    example: 5f3bc9e2502422053e08f9f1
+        400:
+          description: If either of the ids specified is not a valid BSON object id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        404:
+          description: If the specified `historyObjectId` does not exist in the version history database collection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while retrieving the history document summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Error:
+      description: Common format for returning errors from the service.
+      type: object
+      required:
+        - code
+        - cause
+      properties:
+        status:
+          type: integer
+          description: Usually the same as the HTTP status code for the response.
+          example: 417
+        cause:
+          type: string
+          description: A short description of the cause of error.
+          example: "Not found"
+
+    HistorySummary:
+      description: Version history summary information.
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            required:
+              - _id
+              - action
+              - created
+            properties:
+              _id:
+                type: string
+                description: BSON Object ID for the history document.
+                example: 5f3bc9e2502422053e08f9f1
+              action:
+                type: string
+                description: The `action` which resulted in the history document being created.
+                enum:
+                  - create
+                  - update
+                  - delete
+                example: create
+              created:
+                type: string
+                format: date-time
+                description: The timestamp at which the version was created.
+
+    HistoryDocument:
+      description: Standard structure for version history document.
+      type: object
+      required:
+        - _id
+        - database
+        - collection
+        - action
+        - entity
+        - created
+      properties:
+        _id:
+          type: string
+          description: BSON Object ID for the history document.
+          example: 5f3bc9e2502422053e08f9f1
+        database:
+          type: string
+          description: Database in which the versioned entity is (or was) stored.
+          example: sptdb
+        collection:
+          type: string
+          description: Collection in which the versioned entity is (or was) stored.
+          example: users
+        action:
+          type: string
+          description: The `action` which resulted in the history document being created.
+          enum:
+            - create
+            - update
+            - delete
+          example: update
+        created:
+          type: string
+          format: date-time
+          description: The timestamp at which the version was created.
+        entity:
+          type: object
+          description: The document that was versioned.  At the very least it will contain an `_id` property as documented here.  The document will have other properties as was saved originally.
+          properties:
+            _id:
+              type: string
+              description: BSON Object ID for the versioned entity.
+              example: 5f3bc9e2502422053e08f9f1
+        metadata:
+          type: object
+          description: Optional metadata associted with the version.  This is user supplied information when submitting payloads to `mongo-service`.
+          properties:
+            revertedFrom:
+              type: string
+              description: BSON Object Id of the version history document which was reverted, leading to this version being created.
+              example: 5f3bc9e2502422053e08f9f1

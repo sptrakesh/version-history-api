@@ -53,7 +53,7 @@ namespace spt::db::impl
 
       Ptr con;
       std::chrono::time_point<std::chrono::system_clock> time = std::chrono::system_clock::now();
-      uint32_t count;
+      uint32_t count = 0;
     };
 
     struct Proxy
@@ -163,7 +163,7 @@ namespace spt::db::impl
         else
         {
           LOG_INFO << "Removing connection idling for " << diff.count() <<
-                   " seconds and used " << iter->count << " times";
+            " seconds and used " << iter->count << " times";
           available.erase( iter );
         }
       }
