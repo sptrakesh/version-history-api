@@ -3,10 +3,8 @@
 //
 
 #include "output.h"
-#include "../common.h"
 #include <unordered_set>
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 
 void spt::http::bson::handleRoot(
@@ -18,10 +16,7 @@ void spt::http::bson::handleRoot(
 
   if ( methods.find( req.method() ) == std::cend( methods ) ) return unsupported( res );
 
-  if ( req.method() == "OPTIONS" ) return cors( res );
-
-  return ( req.uri().path == "/" ||
-      boost::algorithm::starts_with( req.uri().path, "/version/history/" ) ) ?
+  return req.uri().path == "/" ?
       output( "ok", res ) : error( 404, "Not found", res );
 
 }

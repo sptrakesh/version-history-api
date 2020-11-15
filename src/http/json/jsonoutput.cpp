@@ -3,26 +3,19 @@
 //
 
 #include "output.h"
-#include "../common.h"
 
 #include <iomanip>
 #include <unordered_set>
-
-#include <boost/algorithm/string/predicate.hpp>
 
 void spt::http::json::handleRoot(
     const nghttp2::asio_http2::server::request& req,
     const nghttp2::asio_http2::server::response& res )
 {
   auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
-  auto static const paths = std::unordered_set<std::string>{ "/", "/version/history/" };
 
   if ( methods.find( req.method() ) == std::cend( methods ) ) return unsupported( res );
 
-  if ( req.method() == "OPTIONS" ) return cors( res );
-
-  return ( req.uri().path == "/" ||
-    boost::algorithm::starts_with( req.uri().path, "/version/history/" ) ) ?
+  return req.uri().path == "/" ?
       output( "ok", res ) : error( 404, "Not found", res );
 
 }

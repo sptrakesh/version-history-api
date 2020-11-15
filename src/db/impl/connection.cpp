@@ -18,6 +18,13 @@ Connection::Connection( boost::asio::io_context& ioc, std::string_view h,
   boost::asio::connect( s, resolver.resolve( host, port ) );
 }
 
+Connection::~Connection()
+{
+  boost::system::error_code ec;
+  s.close( ec );
+  if ( ec ) LOG_DEBUG << "Error closing socket connection " << ec.message();
+}
+
 std::optional<bsoncxx::document::value> Connection::execute(
     const bsoncxx::document::view_or_value& document, std::size_t bufSize )
 {

@@ -9,6 +9,8 @@
 
 void spt::http::handleRoot( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
 {
+  if ( req.method() == "OPTIONS" ) return cors( res );
+
   const auto format = outputFormat( req );
   return format == "application/bson" ?
     bson::handleRoot( req, res ) : json::handleRoot( req, res );

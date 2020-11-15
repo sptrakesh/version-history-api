@@ -25,10 +25,7 @@ namespace spt::db::impl
     Connection( const Connection& ) = delete;
     Connection& operator=( const Connection& ) = delete;
 
-    ~Connection()
-    {
-      s.close();
-    }
+    ~Connection();
 
     std::optional<bsoncxx::document::value> execute(
         const bsoncxx::document::view_or_value& document, std::size_t bufSize = 4 * 1024 );

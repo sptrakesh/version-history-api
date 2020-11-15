@@ -9,8 +9,9 @@
 * [Configuration](#configuration)
 * [Acknowledgements](#acknowledgements)
 
-Simple API for retrieving and viewing *version history* for entities stored
-in **MongoDB**.  This is a supporting service for [mongo-service](https://github.com/sptrakesh/mongo-service) 
+[Simple API](openapi.yaml) for retrieving and viewing *version history* for
+entities stored in **MongoDB**.  This is a supporting service for
+[mongo-service](https://github.com/sptrakesh/mongo-service) 
 and exposes version history for documents via a simple **REST API**.
 
 ## Implementation
@@ -19,8 +20,9 @@ or authorisation implemented or enforced.  Those may be applied as appropriate
 by upstream proxies.
 
 This is a HTTP/2 only service.  If using `curl` the `--http2-prior-knowledge`
-option is required.  If hosting behind services such as **Envoy**
-(see docker [stack](docker/stack.yml) and [configuration](docker/envoy.yml)),
+option is required.  If hosting behind services such as
+**[Envoy](https://www.envoyproxy.io/)** (see docker
+[stack](docker/stack.yml) and [configuration](docker/envoy.yml)),
 clients may use HTTP/1.1 or HTTP/2 to access the endpoints.
 
 Clients may request responses in either **BSON** (`accept: application/bson` header)
