@@ -35,6 +35,7 @@ namespace spt
   private:
     QString url{ "http://localhost:6106/version/history/entity/" };
     QString listUrl{ "http://localhost:6106/version/history/list/" };
+    QString entityId;
     QString historyId;
   };
 }

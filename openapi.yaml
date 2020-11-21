@@ -5,10 +5,23 @@ info:
     REST API for common actions around document version history stored in
     __MongoDB__ via `mongo-service`.
 
-    Responses are returned either encoded in __BSON__ or __JSON__.
+    ### Formats
+    Document payloads can be encoded as either __BSON__ or __JSON__.  This applies
+    to both input document payloads (CRUD API), and for the the outputs for all
+    API endpoints.
 
     __JSON__ encoding is via the Mongo C driver utility function to convert
     __BSON__ to __JSON__.
+
+    ### Compression
+    Compressed output is supported and encouraged.  Only `gzip` compression is
+    supported by the service.  Output is compressed only if the output document
+    size exceeds `128` bytes.
+
+    ### Correlation Id
+    Clients can specify a `correlationId` for each request
+    if they wish to correlate log records that are generated across the system.
+    This can be specified via a custom `x-spt-correlation-id` HTTP header.
   version: 1.0.0
 servers:
   - url: 'https'
@@ -308,6 +321,166 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /create/{database}/{collection}:
+    post:
+      summary: Endpoint to create a new document.
+      description: |
+        Create a new document as specified in the request payload in the
+        `database:collection` specified as path parameters.
+
+        The response will be the small metadata document as returned by the
+        `mongo-service`.
+
+        __Note:__ This is a `POST` operation as the process is not idempotent.
+        Only the first request to create a document with a specified object id
+        will succeed.  Any subsequent requests with the same payload will fail.
+      tags:
+        - CRUD
+      operationId: create
+      parameters:
+        - name: database
+          description: The database in which the entity is to be created.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity is to be created.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+      requestBody:
+        description: The document that is to be created.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocument"
+          application/bson:
+            schema:
+              $ref: "#/components/schemas/CreateDocument"
+        required: true
+      responses:
+        200:
+          description: The entity that was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/CreateResponse"
+        400:
+          description: If the input document payload is not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while creating the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /delete/{database}/{collection}/{id}:
+    delete:
+      summary: Endpoint to delete a document.
+      description: |
+        Delete the specified document from the database.  Note that deleting
+        documents from the version history `database:collection` is not supported.
+      tags:
+        - CRUD
+      operationId: delete
+      parameters:
+        - name: database
+          description: The database from which the entity is to be deleted.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection from which the entity is to be deleted.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+        - name: id
+          description: The BSON object id for the document to be deleted.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      responses:
+        200:
+          description: |
+            Document with information about the document that was deleted.
+            Of most interest is the information returned about the version
+            history document that was created as a result of the `delete`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+        400:
+          description: If `objectId` is not a valid BSON object id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        404:
+          description: If the specified `objectId` does not exist in the specified `database:collection`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while deleting the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   schemas:
     Error:
@@ -409,3 +582,121 @@ components:
               type: string
               description: BSON Object Id of the version history document which was reverted, leading to this version being created.
               example: 5f3bc9e2502422053e08f9f1
+
+    CreateDocument:
+      description: |
+        Standard structure for a payload document sent to the utility `create`
+        endpoint.
+
+        Only the mandatory `_id` property is documented.  Other properties can
+        be included as appropriate, and will be saved to the specified
+        `database:collection`.
+      type: object
+      required:
+        - _id
+      properties:
+        _id:
+          type: string
+          description: |
+            BSON Object ID for the document to be created.
+
+            __Note:__ When sending data in __JSON__ format, make sure it is wrapped
+            into an object (`"_id": { "$oid": "5f3bc9e29ba4f45f810edf22" }`) to be
+            parsed into __BSON__ using MongoDB C driver JSON parser.
+          example: 5f3bc9e2502422053e08f9f1
+
+    CreateResponse:
+      description: |
+        Structure returned by the `create` document endpoint.  This is the same
+        structure that is returned by the `mongo-service`.  Only minimal
+        metadata is returned to the client.
+      type: object
+      required:
+        - _id
+        - database
+        - collection
+        - entity
+      properties:
+        _id:
+          type: string
+          description: |
+            BSON Object ID for the document that was created.  This is the same
+            value that was specified in the request.
+
+            __Note:__ When response data is in __JSON__ format, the `_id` is wrapped
+            in an object (`"_id": { "$oid": "5f3bc9e29ba4f45f810edf22" }`) by
+            the MongoDB C driver JSON converter.
+          example: 5f3bc9e2502422053e08f9f1
+        database:
+          type: string
+          description: |
+            The *version history* database in which the initial `create` version
+            of the document was stored.
+
+            In keeping with the version history implementation, the input document
+            is duplicated in the version history database.
+          example: versionHistory
+        collection:
+          type: string
+          description: |
+            The *version history* collection in which the initial `create` version
+            of the document was stored.
+          example: entities
+        entity:
+          type: string
+          description: |
+            BSON Object ID for the version history document that was created.
+            This can be used to retrieve the history document.
+
+            __Note:__ When response data is in __JSON__ format, the `_id` is wrapped
+            in an object (`"_id": { "$oid": "5f35e5e19e48c37186539141" }`) by
+            the MongoDB C driver JSON converter.
+          example: 5f35e5e19e48c37186539141
+
+    DeleteResponse:
+      description: |
+        Structure returned by the `delete` document endpoint. This is a
+        simplified representation of the structure that is returned by the
+        `mongo-service`.  In particular, the arrays returned by the service are
+        transformed into singular objects since this endpoint only allows deleting
+        a single document.
+      type: object
+      required:
+        - _id
+        - history
+      properties:
+        _id:
+          type: string
+          description: |
+            BSON Object ID for the document that was deleted.  This is the same
+            value that was specified in the path.
+
+            __Note:__ When response data is in __JSON__ format, the `_id` is wrapped
+            in an object (`"_id": { "$oid": "5f3bc9e29ba4f45f810edf22" }`) by
+            the MongoDB C driver JSON converter.
+          example: 5f3bc9e2502422053e08f9f1
+        history:
+          description: |
+            Metadata about the version history document that was created as
+            a result of deleting the specified document.  Clients may use this
+            information to *revert* or *undo* the operation if so desired.
+          type: object
+          properties:
+            _id:
+              type: string
+              description: |
+                BSON Object ID for the document that was deleted.  This is the same
+                value that was specified in the path.
+
+                __Note:__ When response data is in __JSON__ format, the `_id` is wrapped
+                in an object (`"_id": { "$oid": "5f3bc9e29ba4f45f810edf22" }`) by
+                the MongoDB C driver JSON converter.
+              example: 5f35ea61e799c521860391a9
+            database:
+              type: string
+              description: Database in which the versioned entity is stored.
+              example: sptdb
+            collection:
+              type: string
+              description: Collection in which the versioned entity is stored.
+              example: users

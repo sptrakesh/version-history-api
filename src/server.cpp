@@ -25,10 +25,13 @@ int spt::start()
   server.num_threads( conf.threads );
 
   server.handle( "/", &spt::http::handleRoot );
+  server.handle( "/docs/openapi.yaml", &spt::http::handleSpec );
   server.handle( "/version/history/list/", &spt::http::handleList );
   server.handle( "/version/history/document/", &spt::http::handleDocument );
   server.handle( "/version/history/entity/", &spt::http::handleEntity );
   server.handle( "/version/history/revert/", &spt::http::handleRevert );
+  server.handle( "/crud/create/", &spt::http::handleCreate );
+  server.handle( "/crud/delete/", &spt::http::handleDelete );
 
   boost::asio::signal_set signals( ch.ioc, SIGINT, SIGTERM );
   signals.async_wait( [&ch](auto const&, int ) { ch.ioc.stop(); } );
@@ -40,6 +43,13 @@ int spt::start()
     }
   );
 
+  std::vector<std::thread> v;
+  v.reserve( conf.threads - 1 );
+  for( auto i = conf.threads - 1; i > 0; --i )
+  {
+    v.emplace_back( [&ch] { ch.ioc.run(); } );
+  }
+
   if ( server.listen_and_serve( ec, "0.0.0.0", conf.port, true ) ) {
     LOG_CRIT << "error: " << ec.message();
     return 1;
@@ -48,6 +58,7 @@ int spt::start()
   ch.ioc.run();
 
   LOG_INFO << "Stopping server";
+  for ( auto& t : v ) t.join();
   server.stop();
   server.join();
 

@@ -5,17 +5,15 @@ LOGDIR=/opt/spt/logs
 Check()
 {
   echo "Checking if $MONGO_SERVICE_HOST is available"
-  for i in $(seq 1 30)
+  status=1
+  count=0
+  while [ $status -ne 0 ]
   do
+    echo "[$count] Mongo Service $MONGO_SERVICE_HOST:$MONGO_SERVICE_PORT not available ($status).  Sleeping 1s..."
+    count=$(($count + 1 ))
+    sleep 1
     nc -z $MONGO_SERVICE_HOST $MONGO_SERVICE_PORT
     status=$?
-    if [ $status -ne 0 ]
-    then
-      echo "[$i] Mongo Service $MONGO_SERVICE_HOST:$MONGO_SERVICE_PORT not available ($status).  Sleeping 1s..."
-      sleep 1
-    else
-      return 0
-    fi
   done
 }
 

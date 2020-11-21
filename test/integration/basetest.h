@@ -27,10 +27,10 @@ namespace spt
         QNetworkRequest* req, const QByteArray& data = {} );
 
     ReplyPointer post( const QString& url, const QByteArray& data,
-        QNetworkRequest* req );
+        QNetworkRequest* req, const QString& contentType = "application/json" );
 
     ReplyPointer put( const QString& url, const QByteArray& data,
-        QNetworkRequest* req );
+        QNetworkRequest* req, const QString& contentType = "application/json" );
 
     QByteArray execute( const QByteArray& payload );
     void remove( const QString& entityId );

@@ -2,10 +2,16 @@
 
 * [Implementation](#implementation)
 * [Endpoints](#endpoints)
-    * [List Versions](#list-versions)
-    * [Retrieve History Document](#retrieve-history-document)
-    * [Retrieve Entity](#retrieve-entity)
-    * [Revert Entity](#revert-entity)
+    * [Version History](#version-history-api)
+        * [List Versions](#list-versions)
+        * [Retrieve History Document](#retrieve-history-document)
+        * [Retrieve Entity](#retrieve-entity)
+        * [Revert Entity](#revert-entity)
+    * [CRUD](#crud)
+        * [Create Document](#create-document)
+        * [Retrieve Document](#retrieve-document)
+        * [Update Document](#update-document)
+        * [Delete Document](#delete-document)
 * [Configuration](#configuration)
 * [Acknowledgements](#acknowledgements)
 
@@ -33,9 +39,16 @@ of the response is supported (`accept-encoding: gzip` header).
 source BSON document.  We use the `k_relaxed` mode for generating the JSON.
 
 ## Endpoints
-The following endpoints are exposed by this service.
+Two groups of endpoints are implemented by this service:
+* **VersionHistory** - services for interacting with document version history.
+* **CRUD** - utility services to perform CRUD operations on documents via the
+[mongo-service](https://github.com/sptrakesh/mongo-service).
 
-### List Versions
+### Version History API
+The following simple endpoints are provided to interact with version history for
+documents.
+
+#### List Versions
 An endpoint to return basic metadata about versions stored for the specified
 document.
 
@@ -70,7 +83,7 @@ We wrap the response into a document to keep it consistent with other responses
 }
 ```
 
-### Retrieve History Document
+#### Retrieve History Document
 An endpoint to retrieve a specific history document by its *object id*.
 
 ```shell script
@@ -94,7 +107,7 @@ interest is stored under an `entity` sub-document.
 }
 ```
 
-### Retrieve Entity
+#### Retrieve Entity
 An endpoint to retrieve an entity by its specific history document *object id*.
 
 ```shell script
@@ -110,7 +123,7 @@ This endpoint returns the entity without its parent wrapper.
 }
 ```
 
-### Revert Entity
+#### Revert Entity
 An endpoint to revert an entity to the specified version. The implementation
 replaces the current document with the versioned entity.
 This is a *true revert* in that the exact same version of the document is restored.
@@ -130,6 +143,19 @@ PUT /version/history/revert/<version document bson oid>/<database>/<collection>/
 
 **Note:** This is a `PUT` endpoint since data is modified in the database.  No
 payload is expected from the client for this API endpoint.
+
+### CRUD
+Utility endpoints to perform *CRUD* operations using the `mongo-service`.  This
+API is most useful for access from scripting languages where performing raw
+socket communication is not preferred.
+
+#### Create Document
+
+#### Retrieve Document
+
+#### Update Document
+
+#### Delete Document
 
 ## Configuration
 The service can be configured via command line parameters.  The following options

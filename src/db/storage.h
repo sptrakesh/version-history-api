@@ -28,4 +28,9 @@ namespace spt::db
       std::string_view database, std::string_view collection, const bsoncxx::oid& entity );
 
   void save( const model::Metric& metric );
+
+  Document create( std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& document );
+  Document remove( std::string_view database, std::string_view collection,
+      const bsoncxx::oid& id );
 }

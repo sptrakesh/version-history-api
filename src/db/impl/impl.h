@@ -29,4 +29,11 @@ namespace spt::db::impl
       const bsoncxx::oid& entityId );
 
   void save( Connection& connection, const model::Metric& metric );
+
+  Document createEntity( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& document );
+  Document deleteEntity( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::oid& id );
 }

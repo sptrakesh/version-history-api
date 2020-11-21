@@ -24,6 +24,7 @@ void EntityTest::initTestCase()
   const auto create = [this]()
   {
     auto oid = bsoncxx::oid{};
+    entityId = QString::fromStdString( oid.to_string() );
 
     auto req = document{} <<
       "action" << "create" <<
@@ -74,7 +75,7 @@ void EntityTest::initTestCase()
 
   create();
   update();
-  remove( historyId );
+  remove( entityId );
 }
 
 void EntityTest::getRequestJson()
@@ -192,8 +193,8 @@ void EntityTest::nonexistentRequestJson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/json" );
 
-  const QString entityId = QString::fromStdString( bsoncxx::oid{}.to_string() );
-  const auto endpoint = QString( "%1%2" ).arg( url ).arg( entityId );
+  const QString eid = QString::fromStdString( bsoncxx::oid{}.to_string() );
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( eid );
   const auto reply = get( endpoint, &req );
 
   QVERIFY2( reply->error() != QNetworkReply::NoError, "Non-existent BSON objectId did not return error" );
@@ -208,8 +209,8 @@ void EntityTest::nonexistentRequestBson()
   QNetworkRequest req;
   req.setRawHeader( "accept", "application/bson" );
 
-  const QString entityId = QString::fromStdString( bsoncxx::oid{}.to_string() );
-  const auto endpoint = QString( "%1%2" ).arg( url ).arg( entityId );
+  const QString eid = QString::fromStdString( bsoncxx::oid{}.to_string() );
+  const auto endpoint = QString( "%1%2" ).arg( url ).arg( eid );
   const auto reply = get( endpoint, &req );
 
   QVERIFY2( reply->error() != QNetworkReply::NoError, "Non-existent BSON objectId did not return error" );

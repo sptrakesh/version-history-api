@@ -21,6 +21,11 @@ namespace spt::http::bson
   void handleRevert( const nghttp2::asio_http2::server::request& req,
       const nghttp2::asio_http2::server::response& res );
 
+  void handleCreate( const nghttp2::asio_http2::server::request& req,
+      const nghttp2::asio_http2::server::response& res );
+  void handleDelete( const nghttp2::asio_http2::server::request& req,
+      const nghttp2::asio_http2::server::response& res );
+
   void unsupported( const nghttp2::asio_http2::server::response& res );
   void output( std::string message, const nghttp2::asio_http2::server::response& res );
   void error( int code, std::string message, const nghttp2::asio_http2::server::response& res );

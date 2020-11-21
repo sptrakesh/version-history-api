@@ -6,6 +6,7 @@
 #include <QtNetwork/QTcpSocket>
 #include <QtTest/QTest>
 
+#include <bsoncxx/json.hpp>
 #include <bsoncxx/validate.hpp>
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
@@ -38,13 +39,13 @@ BaseTest::ReplyPointer BaseTest::custom( const QString& url, const QByteArray& v
 }
 
 BaseTest::ReplyPointer BaseTest::post( const QString& url, const QByteArray& data,
-    QNetworkRequest* req )
+    QNetworkRequest* req, const QString& contentType )
 {
   QEventLoop eventLoop;
   connect( &mgr, &QNetworkAccessManager::finished, &eventLoop, &QEventLoop::quit );
 
   req->setUrl( QUrl( url ) );
-  req->setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  req->setHeader( QNetworkRequest::ContentTypeHeader, contentType );
   req->setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
   ReplyPointer rptr{ mgr.post( *req, data ) };
   eventLoop.exec();
@@ -52,13 +53,13 @@ BaseTest::ReplyPointer BaseTest::post( const QString& url, const QByteArray& dat
 }
 
 BaseTest::ReplyPointer BaseTest::put( const QString& url, const QByteArray& data,
-    QNetworkRequest* req )
+    QNetworkRequest* req, const QString& contentType )
 {
   QEventLoop eventLoop;
   connect( &mgr, &QNetworkAccessManager::finished, &eventLoop, &QEventLoop::quit );
 
   req->setUrl( QUrl( url ) );
-  req->setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  req->setHeader( QNetworkRequest::ContentTypeHeader, contentType );
   req->setAttribute( QNetworkRequest::Http2DirectAttribute, {true} );
   ReplyPointer rptr{ mgr.put( *req, data ) };
   eventLoop.exec();
@@ -106,4 +107,5 @@ void BaseTest::remove( const QString& entityId )
   auto opt = bsoncxx::validate( reinterpret_cast<const uint8_t*>( response.data() ), response.size() );
   QVERIFY2( opt, "Error deleting test document" );
   QVERIFY2( opt->find( "err" ) == opt->end(), "Deleting document returned error" );
+  qDebug() << QString::fromStdString( bsoncxx::to_json( *opt ) );
 }

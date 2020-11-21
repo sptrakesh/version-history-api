@@ -3,6 +3,7 @@ FROM sptrakesh/nghttp2 as base
 
 COPY --from=mongo /opt/local /opt/local
 COPY CMakeLists.txt /opt/spt/version-history-api/CMakeLists.txt
+COPY openapi.yaml /opt/spt/version-history-api/openapi.yaml
 COPY src /opt/spt/version-history-api/src
 
 WORKDIR /opt/spt/version-history-api/build

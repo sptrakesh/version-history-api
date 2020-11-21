@@ -24,6 +24,7 @@ void DocumentTest::initTestCase()
   const auto create = [this]()
   {
     auto oid = bsoncxx::oid{};
+    entityId = QString::fromStdString( oid.to_string() );
 
     auto req = document{} <<
       "action" << "create" <<
@@ -281,5 +282,5 @@ void DocumentTest::deleteRequestBson()
 
 void DocumentTest::cleanupTestCase()
 {
-  remove( historyId );
+  remove( entityId );
 }

@@ -11,9 +11,6 @@ namespace spt::http
   struct Context
   {
     Context() = default;
-    Context( std::string bearer, bool compress, bool compressedBody = false ) :
-        bearer{ std::move( bearer ) }, compressResponse{ compress },
-        compressedBody{ compressedBody } {}
     ~Context() = default;
 
     Context( const Context& ) = delete;
@@ -21,7 +18,7 @@ namespace spt::http
 
     std::string bearer;
     std::string correlationId;
-    bool compressResponse;
-    bool compressedBody;
+    std::string body;
+    bool compress;
   };
 }

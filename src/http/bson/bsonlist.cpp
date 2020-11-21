@@ -14,7 +14,8 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/exception/exception.hpp>
 
-void spt::http::bson::handleList( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+void spt::http::bson::handleList( const nghttp2::asio_http2::server::request& req,
+    const nghttp2::asio_http2::server::response& res )
 {
   const auto st = std::chrono::steady_clock::now();
   auto static const methods = std::unordered_set<std::string>{ "GET", "OPTIONS" };
