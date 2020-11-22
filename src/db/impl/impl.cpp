@@ -373,19 +373,55 @@ auto spt::db::impl::deleteEntity( Connection& connection,
   }
 
   const auto view = opt->view();
-  /*
   const auto err = util::bsonValueIfExists<std::string>( "error", view );
   if ( err )
   {
     std::ostringstream ss;
-    ss << "Error creating entity " <<
+    ss << "Error deleting entity " << database << ':' << collection << ':' << id.to_string() <<
        ". " << *err <<
-       ". " << bsoncxx::to_json( entity ) <<
        ". " << bsoncxx::to_json( reqv );
     LOG_WARN << ss.str();
     return { std::nullopt, 417 };
   }
-   */
 
-  return { bsoncxx::document::value{ view }, 200 };
+  const auto arr = util::bsonValueIfExists<bsoncxx::array::view>( "success", view );
+  if ( !arr )
+  {
+    std::ostringstream ss;
+    ss << "No entity deleted for " << database << ':' << collection << ':' << id.to_string() <<
+       ". " << bsoncxx::to_json( view ) <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  const auto hist = util::bsonValueIfExists<bsoncxx::array::view>( "history", view );
+  if ( !hist )
+  {
+    std::ostringstream ss;
+    ss << "No version history created for entity deleted " << database << ':' << collection << ':' << id.to_string() <<
+       ". " << bsoncxx::to_json( view ) <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  if ( arr->length() < 1 || hist->length() < 1 )
+  {
+    std::ostringstream ss;
+    ss << "No entity deleted " << database << ':' << collection << ':' << id.to_string() <<
+       ". " << bsoncxx::to_json( view ) <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 404 };
+  }
+
+  LOG_INFO << bsoncxx::to_json( *arr );
+  LOG_INFO << bsoncxx::to_json( *hist );
+  auto d = document{} <<
+    "_id" << (*arr)[0].get_oid().value <<
+    "history" << (*hist)[0].get_document().value <<
+    finalize;
+
+  return { d, 200 };
 }

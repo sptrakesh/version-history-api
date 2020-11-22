@@ -234,6 +234,8 @@ void CreateTest::cleanupTestCase()
     qDebug() << obj;
     QVERIFY2( reply->error() == QNetworkReply::NoError, "Delete endpoint returned error" );
     QVERIFY2( !obj.isEmpty(), "Empty error response for api endpoint" );
+    QVERIFY2( obj.contains( "_id"), "Delete did not return deleted document id" );
+    QVERIFY2( obj.contains( "history"), "Delete did not return deleted document history" );
   };
 
   const auto remove2 = [this]()
@@ -249,7 +251,8 @@ void CreateTest::cleanupTestCase()
     const auto option = bsoncxx::validate( reinterpret_cast<const uint8_t*>( body.data() ), body.size() );
     QVERIFY2( option.has_value(), "Response not BSON" );
     qDebug() << QString::fromStdString( bsoncxx::to_json( *option ) );
-    //QVERIFY2( option->find( "cause" ) != option->end(), "Error response does not have cause" );
+    QVERIFY2( option->find( "_id" ) != option->end(), "Delete did not return id" );
+    QVERIFY2( option->find( "history" ) != option->end(), "Delete did not return history" );
   };
 
   remove1();
