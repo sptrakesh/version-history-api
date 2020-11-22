@@ -105,7 +105,6 @@ void spt::http::json::handleDelete( const nghttp2::asio_http2::server::request& 
     context.bearer = authorise( req );
     context.compress = shouldCompress( req );
     context.correlationId = correlationId( req );
-    context.body.reserve( 2048 );
 
     auto format = outputFormat( req );
     if ( format.empty() ) return error( 400, "Bad request", res );

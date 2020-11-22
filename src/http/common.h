@@ -20,6 +20,8 @@ namespace spt::http
   std::string outputFormat( const nghttp2::asio_http2::server::request& req );
   std::string ipaddress( const nghttp2::asio_http2::server::request& req );
 
+  std::string urlDecode( std::string_view path );
+
   using Output = std::tuple<std::string,bool>;
   Output compress( std::string_view data );
 }

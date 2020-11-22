@@ -321,7 +321,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /create/{database}/{collection}:
+  /crud/create/{database}/{collection}:
     post:
       summary: Endpoint to create a new document.
       description: |
@@ -400,7 +400,109 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /delete/{database}/{collection}/{id}:
+  /crud/retrieve/{database}/{collection}/{property}/{value}:
+    get:
+      summary: Endpoint to retrieve documents with the specified combination.
+      description: |
+        Retrieve document(s) from the specified `database:collection`
+        matching the specified combination of property name and value.
+
+        Since the `value` is specified as a `path` parameter, this is intended
+        for use for simple `string` values which do not have spaces or other
+        special characters.  When specifying complex values, the request `path`
+        must be properly *URL encoded*.
+
+        The `property` **must** hold a `string` type value for this endpoint to
+        work.  The only exception is the case for `_id`, in which case the
+        `value` will be parsed as a **BSON Object Id**.  This also means that
+        non object id `_id` values are not supported.
+
+        The response will be the entire document(s) as stored in the specified
+        database collection.
+
+        If the `property` specified is the `_id` property the response will
+        include only the `result` object.  For any other property (even if it
+        is a *unique* property) the response will include the `results` array.
+        The response will have only one or the other of `result` or `results`
+        (mutually exclusive).
+      tags:
+        - CRUD
+      operationId: retrieve
+      parameters:
+        - name: database
+          description: The database in which the entity is to be created.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity is to be created.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+        - name: property
+          description: The name of the property to find matching document.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: email
+        - name: property
+          description: The name of the property to find matching document.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: username
+        - name: value
+          description: The value to match for the specified property.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: test@test.com
+      responses:
+        200:
+          description: The document(s) that were retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrieveResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/RetrieveResponse"
+        400:
+          description: If the path parameters are not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while creating the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /crud/delete/{database}/{collection}/{id}:
     delete:
       summary: Endpoint to delete a document.
       description: |
@@ -652,6 +754,68 @@ components:
             in an object (`"_id": { "$oid": "5f35e5e19e48c37186539141" }`) by
             the MongoDB C driver JSON converter.
           example: 5f35e5e19e48c37186539141
+
+    RetrieveResponse:
+      description: |
+        General description of the document that is returned by the `mongo-service`
+        when retrieving documents.
+      type: object
+      properties:
+        result:
+          type: object
+          description: |
+            A single document that is returned when the retrieval was performed
+            by the BSON ObjectId `_id` property.
+          example: {
+            "_id": {
+              "$oid": "5f35e5e1e799c52186039122"
+            },
+            "intValue": 123,
+            "floatValue": 123.0,
+            "boolValue": true,
+            "stringValue": "abc123",
+            "nested": { "key": "value" }
+          }
+        results:
+          type: array
+          description: |
+            Array of matching documents returned when the retrieval was performed
+            by any other property (or arbitrarily complex query).  If the match
+            was performed on a `unique` property, the array will have only one
+            document.
+          items:
+            type: object
+            description: |
+              A matching document included in the `results` array.  Since this
+              is a general definition, we can document only the mandatory
+              `_id` BSON Object Id property.  In almost all cases the document
+              will have additional properties, depending on the data stored in
+              the target collection.
+            required:
+              - _id
+            properties:
+              _id:
+                type: string
+                description: |
+                  BSON Object ID for the document that was deleted.  This is the same
+                  value that was specified in the path.
+
+                  __Note:__ When response data is in __JSON__ format, the `_id` is wrapped
+                  in an object (`"_id": { "$oid": "5f3bc9e29ba4f45f810edf22" }`) by
+                  the MongoDB C driver JSON converter.
+                example: 5f3bc9e2502422053e08f9f1
+          example: [
+            {
+              "_id": {
+                "$oid": "5f35e5e1e799c52186039122"
+              },
+              "intValue": 123,
+              "floatValue": 123.0,
+              "boolValue": true,
+              "stringValue": "abc123",
+              "nested": { "key": "value" }
+            }
+          ]
 
     DeleteResponse:
       description: |

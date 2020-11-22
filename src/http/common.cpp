@@ -106,3 +106,33 @@ std::string spt::http::ipaddress( const nghttp2::asio_http2::server::request& re
 
   return req.remote_endpoint().address().to_string();
 }
+
+std::string spt::http::urlDecode( std::string_view path )
+{
+  std::string escaped;
+  escaped.reserve( path.size() );
+
+  for ( auto i = path.begin(), nd = path.end(); i < nd; ++i )
+  {
+    auto c = ( *i );
+
+    switch(c)
+    {
+    case '%':
+      if (i[1] && i[2])
+      {
+        char hs[]{ i[1], i[2] };
+        escaped += static_cast<char>( std::strtol(hs, nullptr, 16) );
+        i += 2;
+      }
+      break;
+    case '+':
+      escaped += ' ';
+      break;
+    default:
+      escaped += c;
+    }
+  }
+
+  return escaped;
+}

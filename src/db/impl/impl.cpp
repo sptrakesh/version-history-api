@@ -342,7 +342,63 @@ auto spt::db::impl::createEntity( Connection& connection,
     return { std::nullopt, 417 };
   }
 
-  return { bsoncxx::document::value{ view }, 200 };
+  return { std::move( opt ), 200 };
+}
+
+auto spt::db::impl::retrieve( Connection& connection,
+    std::string_view database, std::string_view collection,
+    std::string_view property, std::string_view value ) -> Document
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  const auto byId = [database, collection, value]()
+  {
+    return document{} <<
+      "action" << "retrieve" <<
+      "database" << database <<
+      "collection" << collection <<
+      "document" << open_document << "_id" << bsoncxx::oid{ value } << close_document <<
+      "application" << "version-history-api" << finalize;
+  };
+
+  const auto byName = [database, collection, property, value]()
+  {
+    return document{} <<
+      "action" << "retrieve" <<
+      "database" << database <<
+      "collection" << collection <<
+      "document" << open_document << property << value << close_document <<
+      "application" << "version-history-api" << finalize;
+  };
+
+  auto req = ( property == "_id" ) ? byId() : byName();
+  const auto reqv = req.view();
+
+  auto opt = connection.execute( reqv );
+
+  if ( !opt )
+  {
+    LOG_WARN << "No or invalid response from service.";
+    connection.setValid( false );
+    return { std::nullopt, 500 };
+  }
+
+  const auto view = opt->view();
+  const auto err = util::bsonValueIfExists<std::string>( "error", view );
+  if ( err )
+  {
+    std::ostringstream ss;
+    ss << "Error retrieving from " << database << ':' << collection <<
+       ". " << *err <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  return { std::move( opt ), 200 };
 }
 
 auto spt::db::impl::deleteEntity( Connection& connection,
@@ -416,8 +472,6 @@ auto spt::db::impl::deleteEntity( Connection& connection,
     return { std::nullopt, 404 };
   }
 
-  LOG_INFO << bsoncxx::to_json( *arr );
-  LOG_INFO << bsoncxx::to_json( *hist );
   auto d = document{} <<
     "_id" << (*arr)[0].get_oid().value <<
     "history" << (*hist)[0].get_document().value <<

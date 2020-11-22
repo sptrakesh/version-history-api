@@ -80,6 +80,13 @@ void spt::http::handleCreate( const nghttp2::asio_http2::server::request& req, c
       bson::handleCreate( req, res ) : json::handleCreate( req, res );
 }
 
+void spt::http::handleRetrieve( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+{
+  const auto of = outputFormat( req );
+  return of == "application/bson" ?
+      bson::handleRetrieve( req, res ) : json::handleRetrieve( req, res );
+}
+
 void spt::http::handleDelete( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
 {
   const auto of = outputFormat( req );
