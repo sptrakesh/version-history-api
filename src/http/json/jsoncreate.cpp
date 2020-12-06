@@ -15,7 +15,6 @@
 #include <unordered_set>
 
 #include <bsoncxx/json.hpp>
-#include <bsoncxx/validate.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/exception/exception.hpp>
 
@@ -29,14 +28,14 @@ void spt::http::json::handleCreate( const nghttp2::asio_http2::server::request& 
 
   try
   {
+    auto format = outputFormat( req );
+    if ( format.empty() ) return error( 400, "Bad request", res );
+
     auto context = std::make_shared<http::Context>();
     context->bearer = authorise( req );
     context->compress = shouldCompress( req );
     context->correlationId = correlationId( req );
     context->body.reserve( 2048 );
-
-    auto format = outputFormat( req );
-    if ( format.empty() ) return error( 400, "Bad request", res );
 
     LOG_DEBUG << "Handling request for " << req.uri().path;
 
@@ -101,13 +100,13 @@ void spt::http::json::handleDelete( const nghttp2::asio_http2::server::request& 
 
   try
   {
+    auto format = outputFormat( req );
+    if ( format.empty() ) return error( 400, "Bad request", res );
+
     auto context = http::Context{};
     context.bearer = authorise( req );
     context.compress = shouldCompress( req );
     context.correlationId = correlationId( req );
-
-    auto format = outputFormat( req );
-    if ( format.empty() ) return error( 400, "Bad request", res );
 
     const auto parts = util::split( req.uri().path, 5, "/" );
     if ( parts.size() != 5 ) return error( 404, "Not found", res );

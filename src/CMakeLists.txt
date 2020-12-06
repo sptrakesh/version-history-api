@@ -8,7 +8,7 @@ function(make_includable input_file output_file)
   set(content "R\"${delim}(\n${content})${delim}\"")
   file(WRITE ${output_file} "${content}")
 endfunction(make_includable)
-make_includable(../openapi.yaml /tmp/openapi.yaml)
+make_includable(../openapi.yaml /tmp/version-history-api.yaml)
 
 target_compile_definitions(version-history-api
   PRIVATE ${LIBMONGOCXX_STATIC_DEFINITIONS}

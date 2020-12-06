@@ -162,6 +162,22 @@ auto spt::db::retrieve( std::string_view database, std::string_view collection,
   return impl::retrieve( connection, database, collection, property, value );
 }
 
+auto spt::db::query( std::string_view database, std::string_view collection,
+    const bsoncxx::document::view& document ) -> Document
+{
+  auto& pool = storage::Pool::instance();
+  auto proxy = pool.acquire();
+  if ( !proxy )
+  {
+    LOG_CRIT << "Error acquiring connection from pool";
+    return {};
+  }
+
+  auto& connection = proxy.value().operator*();
+  return impl::query( connection, database, collection, document );
+}
+
+
 auto spt::db::remove( std::string_view database, std::string_view collection,
     const bsoncxx::oid& id ) -> Document
 {

@@ -32,6 +32,7 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 set(Boost_USE_MULTITHREADED ON)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
 
 find_package(libmongocxx-static REQUIRED)
 find_package(Threads)
@@ -50,7 +51,6 @@ include_directories(
 )
 
 if(UNIX AND NOT APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
   LINK_DIRECTORIES(
     /opt/local/lib
   )

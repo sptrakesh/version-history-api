@@ -32,6 +32,7 @@ int spt::start()
   server.handle( "/version/history/revert/", &spt::http::handleRevert );
   server.handle( "/crud/create/", &spt::http::handleCreate );
   server.handle( "/crud/retrieve/", &spt::http::handleRetrieve );
+  server.handle( "/crud/query/", &spt::http::handleQuery );
   server.handle( "/crud/delete/", &spt::http::handleDelete );
 
   boost::asio::signal_set signals( ch.ioc, SIGINT, SIGTERM );

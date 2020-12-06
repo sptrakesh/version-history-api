@@ -25,6 +25,8 @@ namespace spt::http::bson
       const nghttp2::asio_http2::server::response& res );
   void handleRetrieve( const nghttp2::asio_http2::server::request& req,
       const nghttp2::asio_http2::server::response& res );
+  void handleQuery( const nghttp2::asio_http2::server::request& req,
+      const nghttp2::asio_http2::server::response& res );
   void handleDelete( const nghttp2::asio_http2::server::request& req,
       const nghttp2::asio_http2::server::response& res );
 

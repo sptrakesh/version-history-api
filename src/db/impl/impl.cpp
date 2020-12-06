@@ -89,7 +89,7 @@ auto spt::db::impl::summary( Connection& connection,
     return { std::nullopt, 404 };
   }
 
-  return { opt, 200 };
+  return { std::move( opt ), 200 };
 }
 
 auto spt::db::impl::document( Connection& connection, const bsoncxx::oid& id ) -> Document
@@ -392,6 +392,60 @@ auto spt::db::impl::retrieve( Connection& connection,
   {
     std::ostringstream ss;
     ss << "Error retrieving from " << database << ':' << collection <<
+       ". " << *err <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  return { std::move( opt ), 200 };
+}
+
+auto spt::db::impl::query( Connection& connection,
+    std::string_view database, std::string_view collection,
+    const bsoncxx::document::view& doc ) -> Document
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  const auto query = util::bsonValueIfExists<bsoncxx::document::view>( "query", doc );
+  if ( !query ) return { std::nullopt, 412 };
+
+  auto req = document{};
+  req <<
+    "action" << "retrieve" <<
+    "database" << database <<
+    "collection" << collection <<
+    "document" << *query <<
+    "application" << "version-history-api";
+
+  const auto options = util::bsonValueIfExists<bsoncxx::document::view>( "options", doc );
+  if ( options ) req << "options" << *options;
+  else
+  {
+    req << "options" << open_document << "limit" << 100 << close_document;
+  }
+
+  const auto q = req << finalize;
+  const auto reqv = q.view();
+
+  auto opt = connection.execute( reqv );
+
+  if ( !opt )
+  {
+    LOG_WARN << "No or invalid response from service.";
+    connection.setValid( false );
+    return { std::nullopt, 500 };
+  }
+
+  const auto view = opt->view();
+  const auto err = util::bsonValueIfExists<std::string>( "error", view );
+  if ( err )
+  {
+    std::ostringstream ss;
+    ss << "Error querying database " <<
        ". " << *err <<
        ". " << bsoncxx::to_json( reqv );
     LOG_WARN << ss.str();

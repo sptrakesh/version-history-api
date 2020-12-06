@@ -20,7 +20,7 @@ void spt::http::handleSpec( const nghttp2::asio_http2::server::request& req, con
 {
   if ( req.method() == "OPTIONS" ) return cors( res );
   constexpr const char* yaml =
-#include "/tmp/openapi.yaml"
+#include "/tmp/version-history-api.yaml"
     ;
   auto yamlstr = std::string{ yaml };
   auto sc = shouldCompress( req );
@@ -85,6 +85,13 @@ void spt::http::handleRetrieve( const nghttp2::asio_http2::server::request& req,
   const auto of = outputFormat( req );
   return of == "application/bson" ?
       bson::handleRetrieve( req, res ) : json::handleRetrieve( req, res );
+}
+
+void spt::http::handleQuery( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )
+{
+  const auto of = outputFormat( req );
+  return of == "application/bson" ?
+      bson::handleQuery( req, res ) : json::handleQuery( req, res );
 }
 
 void spt::http::handleDelete( const nghttp2::asio_http2::server::request& req, const nghttp2::asio_http2::server::response& res )

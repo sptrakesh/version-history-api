@@ -430,14 +430,14 @@ paths:
       operationId: retrieve
       parameters:
         - name: database
-          description: The database in which the entity is to be created.
+          description: The database from which entities are to be retrieved.
           in: path
           required: true
           schema:
             type: string
             example: sptdb
         - name: collection
-          description: The collection in which the entity is to be created.
+          description: The collection from which entities are to be retrieved.
           in: path
           required: true
           schema:
@@ -476,6 +476,97 @@ paths:
                 $ref: "#/components/schemas/RetrieveResponse"
         400:
           description: If the path parameters are not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while creating the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /crud/query/{database}/{collection}:
+    post:
+      summary: Endpoint to retrieve documents matching a query.
+      description: |
+        Execute the specified query against the specified `database:collection`.
+
+        If the `query` specified is the `_id` property the response will
+        include only the `result` object.  For any other query the response will
+        include the `results` array. The response will have only one or the
+        other of `result` or `results` (mutually exclusive).
+
+        __Note:__ If no `options` is specified a default `options` with a `limit`
+        of `100` is applied.  This is to avoid running the instance out of memory
+        unless the caller explicitly requests a larger result set.  When the caller
+        explicitly specified `options`, the expectation is that the caller has
+        also specified a *sane* `limit`.
+      tags:
+        - CRUD
+      operationId: query
+      parameters:
+        - name: database
+          description: The database from which entities are to be retrieved.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection from which entities are to be retrieved.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+      requestBody:
+        description: Document with the specifications for the query to be executed.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryDocument"
+          application/bson:
+            schema:
+              $ref: "#/components/schemas/QueryDocument"
+        required: true
+      responses:
+        200:
+          description: The document(s) that were retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrieveResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/RetrieveResponse"
+        400:
+          description: If the path parameters are not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        412:
+          description: If the input query specification is not valid.
           content:
             application/json:
               schema:
@@ -694,6 +785,7 @@ components:
         be included as appropriate, and will be saved to the specified
         `database:collection`.
       type: object
+      additionalProperties: true
       required:
         - _id
       properties:
@@ -763,6 +855,7 @@ components:
       properties:
         result:
           type: object
+          additionalProperties: true
           description: |
             A single document that is returned when the retrieval was performed
             by the BSON ObjectId `_id` property.
@@ -784,13 +877,14 @@ components:
             was performed on a `unique` property, the array will have only one
             document.
           items:
-            type: object
             description: |
               A matching document included in the `results` array.  Since this
               is a general definition, we can document only the mandatory
               `_id` BSON Object Id property.  In almost all cases the document
               will have additional properties, depending on the data stored in
               the target collection.
+            type: object
+            additionalProperties: true
             required:
               - _id
             properties:
@@ -816,6 +910,42 @@ components:
               "nested": { "key": "value" }
             }
           ]
+
+    QueryDocument:
+      description: |
+        A MongoDB query document.
+
+        When making the query using JSON encoding, ensure that the query can be
+        parsed into BSON using the MongoDB driver.
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          description: |
+            The query will be passed *as-is* to the `mongo-service`.  No properties
+            are documented as there are no mandatory properties.  Consult the
+            MongoDB documentation for valid query syntax.
+          type: object
+          example: {
+            "group": "admin",
+            "created": {"$gt": { "$date": "2020-08-18T12:30:00.000Z" } }
+          }
+        options:
+          description: |
+            Options to control output from the *query*.  Use to control result
+            sorting, properties included in the returned documents etc.
+
+            __Note:__ Callers are strongly adviced to *always* specify the
+            `limit` option to restrict the maximum number of matching documents.
+            Use standard *pagination* techniques (include a `$gt` clause when
+            retrieving additional results) to ensure the query is optimal.
+          type: object
+          example: {
+            "limit": 100,
+            "sort": {"_id": -1},
+            "projection": {"name": 1, "email": 1}
+          }
 
     DeleteResponse:
       description: |

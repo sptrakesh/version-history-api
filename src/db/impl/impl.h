@@ -36,6 +36,9 @@ namespace spt::db::impl
   Document retrieve( Connection& connection,
       std::string_view database, std::string_view collection,
       std::string_view property, std::string_view value );
+  Document query( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& document );
   Document deleteEntity( Connection& connection,
       std::string_view database, std::string_view collection,
       const bsoncxx::oid& id );

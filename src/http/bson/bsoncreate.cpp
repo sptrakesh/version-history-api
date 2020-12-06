@@ -7,6 +7,7 @@
 #include "http/common.h"
 #include "http/context.h"
 #include "log/NanoLog.h"
+#include "util/bson.h"
 #include "util/hostname.h"
 #include "util/split.h"
 
@@ -27,14 +28,14 @@ void spt::http::bson::handleCreate( const nghttp2::asio_http2::server::request& 
 
   try
   {
+    auto format = outputFormat( req );
+    if ( format.empty() ) return error( 400, "Bad request", res );
+
     auto context = std::make_shared<http::Context>();
     context->bearer = authorise( req );
     context->compress = shouldCompress( req );
     context->correlationId = correlationId( req );
     context->body.reserve( 2048 );
-
-    auto format = outputFormat( req );
-    if ( format.empty() ) return error( 400, "Bad request", res );
 
     LOG_DEBUG << "Handling request for " << req.uri().path;
 
@@ -53,6 +54,9 @@ void spt::http::bson::handleCreate( const nghttp2::asio_http2::server::request& 
 
       auto idoc = bsoncxx::validate( reinterpret_cast<const uint8_t*>( context->body.data() ), context->body.size() );
       if ( !idoc ) return error( 400, "Invalid BSON", res );
+      const auto oid = util::bsonValueIfExists<bsoncxx::oid>( "_id", *idoc );
+      if ( !oid ) return error( 400, "Document BSON ObjectId not specified", res );
+
       const auto& [doc, status] = db::create( parts[2], parts[3], *idoc );
       if ( status != 200 ) return error( status, "Error creating document", res );
 
@@ -100,13 +104,13 @@ void spt::http::bson::handleDelete( const nghttp2::asio_http2::server::request& 
 
   try
   {
+    auto format = outputFormat( req );
+    if ( format.empty() ) return error( 400, "Bad request", res );
+
     auto context = http::Context{};
     context.bearer = authorise( req );
     context.compress = shouldCompress( req );
     context.correlationId = correlationId( req );
-
-    auto format = outputFormat( req );
-    if ( format.empty() ) return error( 400, "Bad request", res );
 
     const auto parts = util::split( req.uri().path, 5, "/" );
     if ( parts.size() != 5 ) return error( 404, "Not found", res );
