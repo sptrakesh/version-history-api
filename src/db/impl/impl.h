@@ -33,6 +33,18 @@ namespace spt::db::impl
   Document createEntity( Connection& connection,
       std::string_view database, std::string_view collection,
       const bsoncxx::document::view& document );
+  Document updateDocuments( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& filter, const bsoncxx::document::view& document );
+  Document updateDocument( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::oid& id, const bsoncxx::document::view& document );
+  Document replaceDocument( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& filter, const bsoncxx::document::view& document );
+  Document replaceDocument( Connection& connection,
+      std::string_view database, std::string_view collection,
+      const bsoncxx::oid& id, const bsoncxx::document::view& document );
   Document retrieve( Connection& connection,
       std::string_view database, std::string_view collection,
       std::string_view property, std::string_view value );

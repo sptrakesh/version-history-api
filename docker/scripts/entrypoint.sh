@@ -36,7 +36,8 @@ Defaults()
 
   if [ -z "$THREADS" ]
   then
-    THREADS=8
+    np=`nproc --all`
+    THREADS=$((np * 2))
     echo "THREADS not set.  Will default to $THREADS"
   fi
 

@@ -15,7 +15,7 @@ void spt::http::cors( const nghttp2::asio_http2::server::response& res )
 {
   auto headers = nghttp2::asio_http2::header_map{
       {"Access-Control-Allow-Origin", {"*", false}},
-      {"Access-Control-Allow-Methods", {"GET,OPTIONS,PUT", false}}
+      {"Access-Control-Allow-Methods", {"GET,OPTIONS,PATCH,POST,PUT,DELETE", false}}
   };
 
   res.write_head(204, headers);
@@ -73,7 +73,7 @@ std::string spt::http::outputFormat( const nghttp2::asio_http2::server::request&
   if ( iter == std::cend( header ) ) iter = header.find( "Accept" );
   if ( iter == std::cend( header ) )
   {
-    LOG_WARN << "No accept header in request";
+    if ( req.uri().path != "/" ) LOG_WARN << "No accept header in request for " << req.uri().path;
     return "";
   }
 

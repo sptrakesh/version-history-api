@@ -1,4 +1,4 @@
-# version-history-api
+# Version History Api
 
 * [Implementation](#implementation)
 * [Endpoints](#endpoints)
@@ -19,6 +19,11 @@
 entities stored in **MongoDB**.  This is a supporting service for
 [mongo-service](https://github.com/sptrakesh/mongo-service) 
 and exposes version history for documents via a simple **REST API**.
+
+The Open API specification documentation can be viewed on a running instance by
+making a request to `/docs/index.html` (eg. [localhost](http://localhost:6100/docs/index.html)).
+**Note:** redirect for `/docs/` to `/docs/index.html` is not implemented, hence
+the explicit path must be used.
 
 ## Implementation
 This is intended as a internal (intranet) application.  There is no authentication
@@ -150,12 +155,78 @@ API is most useful for access from scripting languages where performing raw
 socket communication is not preferred.
 
 #### Create Document
+Endpoint to create a new document in the specified `database:collection`.  As
+required by the `mongo-service` caller must specify a valid `BSON ObjectId` value
+in the request payload.  Request (and response) can be encoded as either BSON 
+or JSON.  Response can also be compressed using `gzip`.
+
+```shell script
+POST /crud/create/<database>/<collection>
+
+{
+  "_id": { "$oid": "5f3bc9e29ba4f45f810edf22" },
+  "created": { "$date": "2020-08-18T12:30:26.659Z" },
+  "string": "string value",
+  "number": 1234,
+  "double": 1234.56,
+  "bool": false
+}
+```
 
 #### Retrieve Document
+Two endpoints are available to retrieve documents.  A simple `GET` request to
+retrieve documents by a specified `property` and `value`, or a more robust `POST`
+request to execute a specified MongoDB query.
+
+##### Get Request
+Make a `GET` request with the `database`, `collection`, `property`, and `value`
+as `path` parameters.
+
+```shell script
+GET /crud/retrieve/<database>/<collection>/<property>/<value>
+
+{
+  "results": [
+    {
+      "_id": { "$oid": "5f3bc9e29ba4f45f810edf22" },
+      "created": { "$date": "2020-08-18T12:30:26.659Z" },
+      "string": "string value",
+      "number": 1234,
+      "double": 1234.56,
+      "bool": false
+    }
+  ]
+}
+```
+
+##### POST Request
+Make a `POST` request with the MongoDB query and options as the request payload.
+
+```shell
+POST /crud/query/<database>/<collection>
+
+{
+  "query": {
+    "string": "string value",
+    "number": 1234 
+  },
+  "options": {
+    "limit": 5,
+    "sort": {"_id": -1},
+    "projection": {"string": 1, "number": 1}
+  }
+}
+```
 
 #### Update Document
 
 #### Delete Document
+Make a `DELETE` request with the `database`, `collection`, and the BSON ObjectId
+value as `path` parameters to delete a document.
+
+```shell script
+DELETE /crud/delete/<database>/<collection>/<bson object id>
+```
 
 ## Configuration
 The service can be configured via command line parameters.  The following options

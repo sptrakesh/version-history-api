@@ -147,6 +147,66 @@ auto spt::db::create( std::string_view database, std::string_view collection,
   return impl::createEntity( connection, database, collection, document );
 }
 
+auto spt::db::update( std::string_view database, std::string_view collection,
+    const bsoncxx::document::view& filter, const bsoncxx::document::view& document ) -> Document
+{
+  auto& pool = storage::Pool::instance();
+  auto proxy = pool.acquire();
+  if ( !proxy )
+  {
+    LOG_CRIT << "Error acquiring connection from pool";
+    return {};
+  }
+
+  auto& connection = proxy.value().operator*();
+  return impl::updateDocuments( connection, database, collection, filter, document );
+}
+
+auto spt::db::update( std::string_view database, std::string_view collection,
+    const bsoncxx::oid& id, const bsoncxx::document::view& document ) -> Document
+{
+  auto& pool = storage::Pool::instance();
+  auto proxy = pool.acquire();
+  if ( !proxy )
+  {
+    LOG_CRIT << "Error acquiring connection from pool";
+    return {};
+  }
+
+  auto& connection = proxy.value().operator*();
+  return impl::updateDocument( connection, database, collection, id, document );
+}
+
+auto spt::db::replace( std::string_view database, std::string_view collection,
+    const bsoncxx::document::view& filter, const bsoncxx::document::view& document ) -> Document
+{
+  auto& pool = storage::Pool::instance();
+  auto proxy = pool.acquire();
+  if ( !proxy )
+  {
+    LOG_CRIT << "Error acquiring connection from pool";
+    return {};
+  }
+
+  auto& connection = proxy.value().operator*();
+  return impl::replaceDocument( connection, database, collection, filter, document );
+}
+
+auto spt::db::replace( std::string_view database, std::string_view collection,
+    const bsoncxx::oid& id, const bsoncxx::document::view& document ) -> Document
+{
+  auto& pool = storage::Pool::instance();
+  auto proxy = pool.acquire();
+  if ( !proxy )
+  {
+    LOG_CRIT << "Error acquiring connection from pool";
+    return {};
+  }
+
+  auto& connection = proxy.value().operator*();
+  return impl::replaceDocument( connection, database, collection, id, document );
+}
+
 auto spt::db::retrieve( std::string_view database, std::string_view collection,
     std::string_view property, std::string_view value ) -> Document
 {

@@ -31,6 +31,14 @@ namespace spt::db
 
   Document create( std::string_view database, std::string_view collection,
       const bsoncxx::document::view& document );
+  Document update( std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& filter, const bsoncxx::document::view& document );
+  Document update( std::string_view database, std::string_view collection,
+      const bsoncxx::oid& id, const bsoncxx::document::view& document );
+  Document replace( std::string_view database, std::string_view collection,
+      const bsoncxx::document::view& filter, const bsoncxx::document::view& document );
+  Document replace( std::string_view database, std::string_view collection,
+      const bsoncxx::oid& id, const bsoncxx::document::view& document );
   Document retrieve( std::string_view database, std::string_view collection,
       std::string_view property, std::string_view value );
   Document query( std::string_view database, std::string_view collection,

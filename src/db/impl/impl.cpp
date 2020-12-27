@@ -345,6 +345,190 @@ auto spt::db::impl::createEntity( Connection& connection,
   return { std::move( opt ), 200 };
 }
 
+auto spt::db::impl::updateDocuments( Connection& connection,
+    std::string_view database, std::string_view collection,
+    const bsoncxx::document::view& filter, const bsoncxx::document::view& entity ) -> Document
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  auto req = document{} <<
+    "action" << "update" <<
+    "database" << database <<
+    "collection" << collection <<
+    "document" <<
+      open_document <<
+        "filter" << filter <<
+        "update" << entity <<
+      close_document <<
+    "application" << "version-history-api" <<
+    finalize;
+  const auto reqv = req.view();
+
+  auto opt = connection.execute( reqv );
+
+  if ( !opt )
+  {
+    LOG_WARN << "No or invalid response from service.";
+    connection.setValid( false );
+    return { std::nullopt, 500 };
+  }
+
+  const auto view = opt->view();
+  const auto err = util::bsonValueIfExists<std::string>( "error", view );
+  if ( err )
+  {
+    std::ostringstream ss;
+    ss << "Error updating entity " <<
+       ". " << *err <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  return { std::move( opt ), 200 };
+}
+
+auto spt::db::impl::updateDocument( Connection& connection,
+    std::string_view database, std::string_view collection,
+    const bsoncxx::oid& id, const bsoncxx::document::view& entity ) -> Document
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  auto req = document{} <<
+    "action" << "update" <<
+    "database" << database <<
+    "collection" << collection <<
+    "document" <<
+      open_document <<
+        "filter" << open_document << "_id" << id << close_document <<
+        "update" << entity <<
+      close_document <<
+    "application" << "version-history-api" <<
+    finalize;
+  const auto reqv = req.view();
+
+  auto opt = connection.execute( reqv );
+
+  if ( !opt )
+  {
+    LOG_WARN << "No or invalid response from service.";
+    connection.setValid( false );
+    return { std::nullopt, 500 };
+  }
+
+  const auto view = opt->view();
+  const auto err = util::bsonValueIfExists<std::string>( "error", view );
+  if ( err )
+  {
+    std::ostringstream ss;
+    ss << "Error updating entity " <<
+       ". " << *err <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  return { std::move( opt ), 200 };
+}
+
+auto spt::db::impl::replaceDocument( Connection& connection,
+    std::string_view database, std::string_view collection,
+    const bsoncxx::document::view& filter, const bsoncxx::document::view& entity ) -> Document
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  auto req = document{} <<
+    "action" << "update" <<
+    "database" << database <<
+    "collection" << collection <<
+    "document" <<
+      open_document <<
+        "filter" << filter <<
+        "replace" << entity <<
+      close_document <<
+    "application" << "version-history-api" <<
+    finalize;
+  const auto reqv = req.view();
+
+  auto opt = connection.execute( reqv );
+
+  if ( !opt )
+  {
+    LOG_WARN << "No or invalid response from service.";
+    connection.setValid( false );
+    return { std::nullopt, 500 };
+  }
+
+  const auto view = opt->view();
+  const auto err = util::bsonValueIfExists<std::string>( "error", view );
+  if ( err )
+  {
+    std::ostringstream ss;
+    ss << "Error replacing entity " <<
+       ". " << *err <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  return { std::move( opt ), 200 };
+}
+
+auto spt::db::impl::replaceDocument( Connection& connection,
+    std::string_view database, std::string_view collection,
+    const bsoncxx::oid& id, const bsoncxx::document::view& entity ) -> Document
+{
+  using bsoncxx::builder::stream::document;
+  using bsoncxx::builder::stream::open_document;
+  using bsoncxx::builder::stream::close_document;
+  using bsoncxx::builder::stream::finalize;
+
+  auto req = document{} <<
+    "action" << "update" <<
+    "database" << database <<
+    "collection" << collection <<
+    "document" <<
+      open_document <<
+        "filter" << open_document << "_id" << id << close_document <<
+        "replace" << entity <<
+      close_document <<
+    "application" << "version-history-api" <<
+    finalize;
+  const auto reqv = req.view();
+
+  auto opt = connection.execute( reqv );
+
+  if ( !opt )
+  {
+    LOG_WARN << "No or invalid response from service.";
+    connection.setValid( false );
+    return { std::nullopt, 500 };
+  }
+
+  const auto view = opt->view();
+  const auto err = util::bsonValueIfExists<std::string>( "error", view );
+  if ( err )
+  {
+    std::ostringstream ss;
+    ss << "Error replacing entity " <<
+       ". " << *err <<
+       ". " << bsoncxx::to_json( reqv );
+    LOG_WARN << ss.str();
+    return { std::nullopt, 417 };
+  }
+
+  return { std::move( opt ), 200 };
+}
+
 auto spt::db::impl::retrieve( Connection& connection,
     std::string_view database, std::string_view collection,
     std::string_view property, std::string_view value ) -> Document

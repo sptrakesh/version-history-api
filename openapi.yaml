@@ -3,7 +3,7 @@ info:
   title: Version History REST API
   description: |
     REST API for common actions around document version history stored in
-    __MongoDB__ via `mongo-service`.
+    __MongoDB__ via [mongo-service](https://github.com/sptrakesh/mongo-service).
 
     ### Formats
     Document payloads can be encoded as either __BSON__ or __JSON__.  This applies
@@ -383,6 +383,338 @@ paths:
                 $ref: "#/components/schemas/Error"
         417:
           description: If the `mongo-service` returns an error while creating the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /crud/update/{database}/{collection}:
+    post:
+      summary: Endpoint to modify existing document(s) with  the input data.
+      description: |
+        Merges all documents in the specified `database:collection` matching
+        the filter query with the specified document.
+
+        Version history documents with the post-update version of the matching
+        documents are created.
+
+        **Note**: This is a `POST` request since the number of documents updated
+        can vary between different invocations of this endpoint depending upon
+        the `filter` query.
+      tags:
+        - CRUD
+      operationId: update
+      parameters:
+        - name: database
+          description: The database in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+      requestBody:
+        description: The document that contains the filter query and the document data to merge.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRequest"
+          application/bson:
+            schema:
+              $ref: "#/components/schemas/UpdateRequest"
+        required: true
+      responses:
+        200:
+          description: |
+            A document with basic metadata about the results of the update
+            operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatesResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/UpdatesResponse"
+        400:
+          description: If the input document payload is not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while updating documents.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /crud/update/{database}/{collection}/{id}:
+    put:
+      summary: Endpoint to replace an existing document with  the input data.
+      description: |
+        Replaces the document identified by the specified `database:collection:id`
+        with the input payload.
+
+        A version history document with the payload contents is created.
+
+        The input payload **must** contain the `_id` property.
+      tags:
+        - CRUD
+      operationId: updateById
+      parameters:
+        - name: database
+          description: The database in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+        - name: id
+          description: The BSON object id for the document to be updated.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      requestBody:
+        description: The document that is to be merged into the existing document.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocument"
+          application/bson:
+            schema:
+              $ref: "#/components/schemas/CreateDocument"
+        required: true
+      responses:
+        200:
+          description: |
+            A document that contains the updated entity as well as information
+            about the version history that was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
+        400:
+          description: If the input document payload is not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while updating the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Endpoint to merge the input data into the specified document.
+      description: |
+        Merges the payload data into the document identified by the specified
+        `database:collection:id`.
+
+        A version history document with the post-update contents of the document
+        is created.
+
+        The input payload **must** contain the `_id` property.
+      tags:
+        - CRUD
+      operationId: mergeById
+      parameters:
+        - name: database
+          description: The database in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+        - name: id
+          description: The BSON object id for the document to be updated.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 5f3bc9e2502422053e08f9f1
+      requestBody:
+        description: The document that is to be merged into the existing document.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateResponse"
+          application/bson:
+            schema:
+              $ref: "#/components/schemas/UpdateResponse"
+        required: true
+      responses:
+        200:
+          description: |
+            A document that contains the updated entity as well as information
+            about the version history that was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
+        400:
+          description: If the input document payload is not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while updating the document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: If errors were encountered communicating with `mongo-service`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /crud/replace/{database}/{collection}:
+    put:
+      summary: Endpoint to replace a document matched by a specified filter query.
+      description: |
+        Replace an existing document matched by an input `filter` query document
+        with the specified `replace` document.
+
+        If multiple documents match the `filter`, the first one returned by MongoDB
+        is replaced.
+
+        The replacement document need not include the `_id` property.  If the caller
+        has access to the `_id`, there would be no reason to use a `filter` query.
+        The same can be achieved by making a `PUT` request to the *update* endpoint.
+        Of course the `filter` query can be by `_id` property.
+      tags:
+        - CRUD
+      operationId: replace
+      parameters:
+        - name: database
+          description: The database in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: sptdb
+        - name: collection
+          description: The collection in which the entity exists.
+          in: path
+          required: true
+          schema:
+            type: string
+            example: users
+      requestBody:
+        description: The document with the `filter` query and the `replace` document.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceRequest"
+          application/bson:
+            schema:
+              $ref: "#/components/schemas/ReplaceRequest"
+        required: true
+      responses:
+        200:
+          description: |
+            A document that contains the updated entity as well as information
+            about the version history that was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/UpdateResponse"
+        400:
+          description: If the input document payload is not valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/bson:
+              schema:
+                $ref: "#/components/schemas/Error"
+        417:
+          description: If the `mongo-service` returns an error while updating the document.
           content:
             application/json:
               schema:
@@ -846,6 +1178,175 @@ components:
             in an object (`"_id": { "$oid": "5f35e5e19e48c37186539141" }`) by
             the MongoDB C driver JSON converter.
           example: 5f35e5e19e48c37186539141
+
+    UpdateRequest:
+      description: |
+        Structure for a general purpose update request.  Update is expressed
+        as a combination of an update `filter` query, and the document to merge
+        in to all matching documents in the specified `database:collection`.
+
+        This endpoint can be used to apply standard information to a number
+        of documents matching the input filter.  In the extreme case, this can
+        be used to add some standard properties to all documents in a `collection`.
+
+        Each document matching the `filter` is retrieved post-merge, and a
+        corresponding version history document generated.  This post-processing
+        can add quite a lot of time to the request.
+
+        **Note:** When updating documents by a filter query with `_id` property,
+        use the endpoint that takes the `{id}` path parameter.
+      type: object
+      required:
+        - filter
+        - update
+      properties:
+        filter:
+          type: object
+          additionalProperties: true
+          description: |
+            The filter query to use to find candidate documents that are to be
+            updated.  If the filter matches multiple documents, all matching
+            documents are updated.
+
+            __Note:__ When sending data in __JSON__ format, make sure special
+            types such as BSON Object Id, date, etc are encoded in the format
+            expected by the MongoDB JSON parser.
+          example: {
+            "group": "users",
+            "role": "admin"
+          }
+        update:
+          type: object
+          additionalProperties: true
+          description: |
+            The data that is to be merged into all documents matching the input
+            filter query.  In general this should not include the `_id` (or any
+            unique fields for that matter) field, unless the input filter query
+            matches exactly one document.
+          example: {
+            "modified": { "$date" : 1608780307513 },
+            "user": {
+              "_id" : { "$oid" : "5fe409f879634171a83232a3" },
+              "username": "rakesh"
+            }
+          }
+
+    UpdatesResponse:
+      description: |
+        Response returned in response to multi-document update by filter
+        query.  Only very minimal information is returned in the response.
+      type: object
+      properties:
+        success:
+          type: integer
+          description: The number of successful updates for the input filter.
+          example: 5
+        failure:
+          type: integer
+          description: The number of failed updates for the input filter.
+          example: 5
+        history:
+          type: array
+          description: |
+            Array of BSON ObjectId values for the version history documents
+            created for the updates.
+          example: [
+            { "$oid": "5f35e5e1e799c52186039122" },
+            { "$oid" : "5fe409f879634171a83232a3" }
+          ]
+
+    UpdateResponse:
+      description: |
+        Structure returned by the `update` document endpoint.  This is the same
+        structure that is returned by the `mongo-service`.
+
+        The `document` element in the response will be entire current document
+        in the `database:collection`.  Only the mandatory `_id` can be documented.
+      type: object
+      properties:
+        document:
+          type: object
+          additionalProperties: true
+          description: |
+            The full (result after merging input) document that is the current
+            content for the specified document.
+          example: {
+            "_id": {
+              "$oid": "5f35e5e1e799c52186039122"
+            },
+            "intValue": 123,
+            "floatValue": 123.0,
+            "boolValue": true,
+            "stringValue": "abc123",
+            "nested": { "key": "value" }
+          }
+        history:
+          type: object
+          description: |
+            Metadata about the version history document that was generated
+            by the update action.
+          example: {
+            "_id": {
+              "$oid": "5f35e887e799c5218603915b"
+            },
+            "database": "sptdb",
+            "collection": "users",
+            "entity": {
+              "$oid": "5f35e5e1e799c52186039122"
+            }
+          }
+
+    ReplaceRequest:
+      description: |
+        Structure for a general purpose replace request.  Replace is expressed
+        as a combination of an update `filter` query (should return a single
+        matching document), and the `replace` document to replace the existing
+        document in the specified `database:collection`.
+
+        Since this is a full replace, the replacement document must be the full
+        document (the `_id` field is optional).
+
+        The post-update document is retrieved (if `_id` is not included) to create
+        the version history document.
+      type: object
+      required:
+        - filter
+        - replace
+      properties:
+        filter:
+          type: object
+          additionalProperties: true
+          description: |
+            The filter query to use to find the candidate document that is to be
+            updated.  If the filter matches multiple documents, the first one
+            returned is updated.
+
+            __Note:__ When sending data in __JSON__ format, make sure special
+            types such as BSON Object Id, date, etc are encoded in the format
+            expected by the MongoDB JSON parser.
+          example: {
+            "group": "users",
+            "role": "admin"
+          }
+        replace:
+          type: object
+          additionalProperties: true
+          description: |
+            The document to replace the existing document that matches the
+            filter query.
+
+            **Note:** The `_id` is not required.  MongoDB handles merging the
+            existing `_id` with the `replace` document as needed.
+          example: {
+            "_id": {
+              "$oid": "5f35e887e799c5218603915b"
+            },
+            "modified": { "$date" : 1608780307513 },
+            "user": {
+              "_id" : { "$oid" : "5fe409f879634171a83232a3" },
+              "username": "rakesh"
+            }
+          }
 
     RetrieveResponse:
       description: |
